@@ -13,29 +13,40 @@ from thermal.models import Stack
 LOG = logging.getLogger(__name__)
 
 
-class DeleteStack(tables.LinkAction):
+class LaunchStack(tables.LinkAction):
+    name = "launch"
+    verbose_name = _("Launch Stack")
+    url = "horizon:thermal:stacks:upload"
+    classes = ("ajax-modal", "btn-create")
+
+class DeleteStack(tables.BatchAction):
     name = "delete"
-    verbose_name = _("Delete Stack")
-    url = "horizon:project:access_and_security:floating_ips:associate"
-    classes = ("ajax-modal", "btn-associate")
+    action_present = _("Delete")
+    action_past = _("Scheduled deletion of")
+    data_type_singular = _("Stack")
+    data_type_plural = _("Stacks")
+    classes = ('btn-danger', 'btn-terminate')
 
-    #def allowed(self, request, instance):
-    #    return not _is_deleting(instance)
+    def allowed(self, request, stack=None):
+        if stack:
+            return True
 
-    def get_link_url(self, datum):
-        base_url = urlresolvers.reverse(self.url)
-        next = urlresolvers.reverse("horizon:project:instances:index")
-        params = {"name": self.table.get_object_id(datum),}
-        #          IPAssociationWorkflow.redirect_param_name: next}
-        params = urlencode(params)
-        return "?".join([base_url, params])
-
+    def action(self, request, stack_name):
+        stack = Stack.objects.get(StackName=stack_name)
+        stack.delete()
 
 class StacksUpdateRow(tables.Row):
     ajax = True
 
     def get_data(self, request, stack_name):
-        stack = Stack.objects.get(StackName=stack_name)
+        try:
+            stack = Stack.objects.get(StackName=stack_name)
+        except:
+            # probably didn't find the stack
+            # should catch this better
+            # for now maybe create an emptyone
+            # to satisfy the ajax status updater?
+            stack = None
         return stack
 
 class ThermalStacksTable(tables.DataTable):
@@ -59,6 +70,6 @@ class ThermalStacksTable(tables.DataTable):
         name = "stacks"
         verbose_name = _("Stacks")
         status_columns = ["status", ]
-#        table_actions = (DeleteStack,)
+        table_actions = (LaunchStack, DeleteStack,)
         row_class = StacksUpdateRow
-#        row_actions = (DeleteStack, )
+        row_actions = (DeleteStack, )

@@ -7,6 +7,7 @@ class Stack(xml_models.Model):
     object_xpath = './/member'
     rest_all = 'list_stacks'
     rest_get = 'describe_stacks'
+    client = None
 
     id = xml_models.CharField(xpath='/member/StackName')
     stackid = xml_models.CharField(xpath='/member/StackId')
@@ -20,37 +21,34 @@ class Stack(xml_models.Model):
     def __unicode__(self):
         return self.id
 
-    @staticmethod
-    def launch(template, parameters):
+    def launch(self, template, parameters):
         '''
         take a json object and QueryDict of parameters
         and calls heat's api to launch a stack
         '''
-        c = heatclient(request)
+        heat_template = json.loads(template)
+
         stack_name = parameters['StackName']
         del parameters['StackName'] # can't use pop because it's a QueryDict
 
         launch_parameters = {}
         for param in parameters:
             # have to be explicit like this because data is in a QueryDict
-            if param in template['Parameters'].keys():
+            if param in heat_template['Parameters'].keys():
                 launch_parameters[param] = parameters[param]
 
-        formatted_parameters = c.format_parameters(launch_parameters)
+        formatted_parameters = self.client.format_parameters(launch_parameters)
         formatted_parameters.update({'StackName': stack_name,
                            'TimeoutInMinutes': 5,
-                           'TemplateBody': json.dumps(template, sort_keys=False),
+                           'TemplateBody': template, #json.dumps(template, sort_keys=False),
                           })
-        print formatted_parameters
         # get the form params
-        result = c.create_stack(**formatted_parameters)
+        result = self.client.create_stack(**formatted_parameters)
         return result
 
-    @staticmethod
-    def delete(stack_name):
-        parameters = {'StackName': stack_name}
-        c = heatclient
-        result = c.delete_stack(**parameters)
+    def delete(self):
+        parameters = {'StackName': self.name}
+        result = self.client.delete_stack(**parameters)
         return result
  
 class StackCreate(xml_models.Model):

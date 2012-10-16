@@ -256,7 +256,7 @@ class XmlModelQuery(object):
         return self
 
     def count(self):
-        content = self._get_content()
+        content = self._get_content(self.model.rest_all)
         count = 0
         for x in self._fragments(content):
             count += 1
@@ -265,7 +265,7 @@ class XmlModelQuery(object):
     def __iter__(self):
         content = self._get_content(self.model.rest_all)
         for x in self._fragments(content):
-            yield self.model(xml=x)
+            yield self.model(self.client, xml=x)
             
     def __len__(self):
         return self.count()
@@ -285,7 +285,7 @@ class XmlModelQuery(object):
         #content = response.content.read()
         if not content:
             raise DoesNotExist(self.model, self.args)
-        return self.model(xml=content)
+        return self.model(self.client, xml=content)
 
     def _get_first(self, xml):
         tree = et.fromstring(xml)
@@ -331,7 +331,7 @@ class Model:
         addresses = xml_models.CollectionField(Address, xpath="/Person/Addresses/Address")
         date_of_birth = xml_models.DateField(xpath="/Person/@DateOfBirth", date_format="%d-%m-%Y")
     """
-    def __init__(self, xml=None, dom=None):
+    def __init__(self, client, xml=None, dom=None):
         self._xml = xml
         self._dom = dom
         self._cache = {}
@@ -339,6 +339,8 @@ class Model:
         self.object_xpath = ''
         self.rest_all
         self.rest_get
+        self.client = client
+        
 
     """Override on your model to perform validation when the XML data is first passed in. This is to ensure the xml returned
        conforms to the validation rules.  We use this because some records are no use to us if they don't contain certain
