@@ -336,9 +336,9 @@ class Model:
         self._dom = dom
         self._cache = {}
         self.validate_on_load()
-        self.object_xpath = ''
-        self.rest_all
-        self.rest_get
+        self.object_xpath = '.'
+        self.rest_all = None
+        self.rest_get = None
         self.client = client
         
 
