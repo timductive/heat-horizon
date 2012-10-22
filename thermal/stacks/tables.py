@@ -2,6 +2,7 @@ import logging
 
 from django.core import urlresolvers
 from django.utils.http import urlencode
+from django.http import Http404
 from django.template.defaultfilters import title
 from django.utils.translation import ugettext_lazy as _
 
@@ -42,11 +43,9 @@ class StacksUpdateRow(tables.Row):
         try:
             stack = Stack.objects.get(StackName=stack_name)
         except:
-            # probably didn't find the stack
-            # should catch this better
-            # for now maybe create an emptyone
-            # to satisfy the ajax status updater?
-            stack = None
+            # TODO: read the actual error and make sure we're
+            # getting a stack-does-not-exist error
+            raise Http404
         return stack
 
 class ThermalStacksTable(tables.DataTable):
