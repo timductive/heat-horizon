@@ -15,12 +15,12 @@
     </fieldset>
 </div>
 <div class="right">
-    <h3>{% trans "Upload Template" %}:</h3>
-    <p>{% trans "Upload a new template to launch" %}</p>
+    <h3>{% trans "Launch a Template" %}:</h3>
+    <p>{% trans "Upload a template or provide an http url to download a template from" %}</p>
 </div>
 {% endblock %}
 
 {% block modal-footer %}
-  <input class="btn btn-primary pull-right" type="submit" value="{% trans "Upload Template" %}" />
+  <input class="btn btn-primary pull-right" type="submit" value="{% trans "Next" %}" />
   <a href="{% url horizon:thermal:stacks:index %}" class="btn secondary cancel close">{% trans "Cancel" %}</a>
 {% endblock %}
