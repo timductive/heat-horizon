@@ -5,6 +5,7 @@ from horizon import forms
 from django.db import models
 from thermal.db import xml_models
 
+
 class HeatTemplate(object):
     template = None
     json = None
@@ -12,7 +13,7 @@ class HeatTemplate(object):
 
     def __init__(self, template, passback=None):
         # get uploaded form from the cache
-        self.template = template 
+        self.template = template
         self.json = json.loads(template,
                                object_pairs_hook=collections.OrderedDict)
         self.form = self.generate_heat_form()
@@ -25,22 +26,25 @@ class HeatTemplate(object):
         returns a form object created from the heat template
         '''
         # Collect the fields
-        fields = {'StackName': forms.CharField(help_text='Unique name for the stack')}
+        fields = {'StackName': forms.CharField(
+                                   help_text='Unique name for the stack')}
         for param, val in self.json['Parameters'].items():
             if 'AllowedValues' in val:
-                choices = map(lambda x: (x,x), val['AllowedValues'])
+                choices = map(lambda x: (x, x), val['AllowedValues'])
                 fields[param] = forms.ChoiceField(choices=choices)
             else:
-                fields[param] = forms.CharField(initial=val.get('Default', None),
-                                    help_text=val.get('ConstraintDescription', ''))
-            fields[param].initial=val.get('Default', None)
-            fields[param].help_text=val.get('Description', '')
-                                          # + val.get('ConstraintDescription', '')
-        ####fields['launch_ha'] = forms.BooleanField(required=False) 
+                fields[param] = forms.CharField(
+                                    initial=val.get('Default', None),
+                                    help_text=val.get('ConstraintDescription',
+                                                      ''))
+            fields[param].initial = val.get('Default', None)
+            fields[param].help_text = val.get('Description', '')
+                                       # + val.get('ConstraintDescription', '')
+        ####fields['launch_ha'] = forms.BooleanField(required=False)
         # Create the form object
         base_form = type('HeatTemplateBaseForm', (forms.BaseForm,),
-                                                 { 'base_fields': fields })
-        form = type('HeatTemplateForm',(forms.Form, base_form),{})
+                                                 {'base_fields': fields})
+        form = type('HeatTemplateForm', (forms.Form, base_form), {})
         # Set the fields order
         # This will have no effect if the params object is not
         # of type collections.OrderedDict
@@ -50,16 +54,19 @@ class HeatTemplate(object):
         ####form.base_fields.keyOrder.append('launch_ha')
         return form
 
+
 class StackParameter(xml_models.Model):
     object_xpath = './/member'
     id = xml_models.CharField(xpath='/member/ParameterKey')
     value = xml_models.CharField(xpath='/member/ParameterValue')
+
 
 class StackOutput(xml_models.Model):
     object_xpath = './/member'
     id = xml_models.CharField(xpath='/member/OutputKey')
     value = xml_models.CharField(xpath='/member/OutputValue')
     description = xml_models.CharField(xpath='/member/Description')
+
 
 class Stack(xml_models.Model):
     object_xpath = './/member'
@@ -75,15 +82,21 @@ class Stack(xml_models.Model):
     description = xml_models.CharField(xpath='/member/TemplateDescription',
                                        alt_xpath='/member/Description')
     status_reason = xml_models.CharField(xpath='/member/StackStatusReason')
-    created = xml_models.DateField(xpath='/member/CreationTime', date_format='%Y-%m-%dT%H:%M:%SZ')
-    updated = xml_models.DateField(xpath='/member/LastUpdatedTime', date_format='%Y-%m-%dT%H:%M:%SZ')
+    created = xml_models.DateField(xpath='/member/CreationTime',
+                                   date_format='%Y-%m-%dT%H:%M:%SZ')
+    updated = xml_models.DateField(xpath='/member/LastUpdatedTime',
+                                   date_format='%Y-%m-%dT%H:%M:%SZ')
 
     # get (heat describe) properties
-    parameters = xml_models.CollectionField(StackParameter, xpath='/member/Parameters/member')
-    outputs = xml_models.CollectionField(StackOutput, xpath='/member/Outputs/member')
+    parameters = xml_models.CollectionField(StackParameter,
+                                            xpath='/member/Parameters/member')
+    outputs = xml_models.CollectionField(StackOutput,
+                                         xpath='/member/Outputs/member')
     timeout = xml_models.IntField(xpath='/member/TimeoutInMinutes')
-    #capabilities = xml_models.CollectionField(StackCapabilities, xpath='/member/Capabilities/member')
-    #notifications = xml_models.CollectionField(StackNotifications, xpath='/member/NotificationARNs/member')
+    #capabilities = xml_models.CollectionField(StackCapabilities,
+    #                                      xpath='/member/Capabilities/member')
+    #notifications = xml_models.CollectionField(StackNotifications,
+    #                                  xpath='/member/NotificationARNs/member')
     disablerollback = xml_models.BoolField(xpath='/member/DisableRollback')
 
     def __unicode__(self):
@@ -97,7 +110,7 @@ class Stack(xml_models.Model):
         heat_template = json.loads(template)
 
         stack_name = parameters['StackName']
-        del parameters['StackName'] # can't use pop because it's a QueryDict
+        del parameters['StackName']  # can't use pop because it's a QueryDict
 
         launch_parameters = {}
         for param in parameters:
@@ -108,7 +121,8 @@ class Stack(xml_models.Model):
         formatted_parameters = self.client.format_parameters(launch_parameters)
         formatted_parameters.update({'StackName': stack_name,
                            'TimeoutInMinutes': 5,
-                           'TemplateBody': template, #json.dumps(template, sort_keys=False),
+                           'TemplateBody': template,
+                            #json.dumps(template, sort_keys=False),
                           })
         # get the form params
         result = self.client.create_stack(**formatted_parameters)
@@ -118,7 +132,8 @@ class Stack(xml_models.Model):
         parameters = {'StackName': self.name}
         result = self.client.delete_stack(**parameters)
         return result
- 
+
+
 class StackCreate(xml_models.Model):
     object_xpath = './/CreateStackResult'
 
@@ -126,28 +141,42 @@ class StackCreate(xml_models.Model):
     StackName = xml_models.CharField(xpath='/StackName')
     Description = xml_models.CharField(xpath='/Description')
     Parameters = xml_models.CharField(xpath='/Parameters')
-    
+
 
 class EventResourceProperties(xml_models.Model):
-    NovaSchedulerHints = xml_models.CharField(xpath='/member/ResourceProperties/NovaSchedulerHints')
-    UserData = xml_models.CharField(xpath='/member/ResourceProperties/UserData')
-    SourceDestCheck = xml_models.CharField(xpath='/member/ResourceProperties/SourceDestCheck')
-    AvailabilityZone = xml_models.CharField(xpath='/member/ResourceProperties/AvailabilityZone')
-    Monitoring = xml_models.CharField(xpath='/member/ResourceProperties/Monitoring')
+    NovaSchedulerHints = xml_models.CharField(
+                         xpath='/member/ResourceProperties/NovaSchedulerHints')
+    UserData = xml_models.CharField(
+               xpath='/member/ResourceProperties/UserData')
+    SourceDestCheck = xml_models.CharField(
+                      xpath='/member/ResourceProperties/SourceDestCheck')
+    AvailabilityZone = xml_models.CharField(
+                       xpath='/member/ResourceProperties/AvailabilityZone')
+    Monitoring = xml_models.CharField(
+                 xpath='/member/ResourceProperties/Monitoring')
     Volumes = xml_models.CharField(xpath='/member/ResourceProperties/Volumes')
     Tags = xml_models.CharField(xpath='/member/ResourceProperties/Tags')
     Tenancy = xml_models.CharField(xpath='/member/ResourceProperties/Tenancy')
-    PlacementGroupName = xml_models.CharField(xpath='/member/ResourceProperties/PlacementGroupName')
+    PlacementGroupName = xml_models.CharField(
+                         xpath='/member/ResourceProperties/PlacementGroupName')
     ImageId = xml_models.CharField(xpath='/member/ResourceProperties/ImageId')
-    SubnetId = xml_models.CharField(xpath='/member/ResourceProperties/SubnetId')
+    SubnetId = xml_models.CharField(
+               xpath='/member/ResourceProperties/SubnetId')
     KeyName = xml_models.CharField(xpath='/member/ResourceProperties/KeyName')
-    SecurityGroups = xml_models.CharField(xpath='/member/ResourceProperties/SecurityGroups')
-    SecurityGroupIds = xml_models.CharField(xpath='/member/ResourceProperties/SecurityGroupIds')
-    KernelId = xml_models.CharField(xpath='/member/ResourceProperties/KernelId')
-    RamDiskId = xml_models.CharField(xpath='/member/ResourceProperties/RamDiskId')
-    DisableApiTermination = xml_models.CharField(xpath='/member/ResourceProperties/DisableApiTermination')
-    InstanceType = xml_models.CharField(xpath='/member/ResourceProperties/InstanceType')
-    PrivateIpAddress = xml_models.CharField(xpath='/member/ResourceProperties/PrivateIpAddress')
+    SecurityGroups = xml_models.CharField(
+                     xpath='/member/ResourceProperties/SecurityGroups')
+    SecurityGroupIds = xml_models.CharField(
+                       xpath='/member/ResourceProperties/SecurityGroupIds')
+    KernelId = xml_models.CharField(
+               xpath='/member/ResourceProperties/KernelId')
+    RamDiskId = xml_models.CharField(
+                xpath='/member/ResourceProperties/RamDiskId')
+    DisableApiTermination = xml_models.CharField(
+                      xpath='/member/ResourceProperties/DisableApiTermination')
+    InstanceType = xml_models.CharField(
+                   xpath='/member/ResourceProperties/InstanceType')
+    PrivateIpAddress = xml_models.CharField(
+                       xpath='/member/ResourceProperties/PrivateIpAddress')
 
 
 class Event(xml_models.Model):
@@ -158,12 +187,18 @@ class Event(xml_models.Model):
     StackId = xml_models.CharField(xpath='/member/StackId')
     ResourceStatus = xml_models.CharField(xpath='/member/ResourceStatus')
     ResourceType = xml_models.CharField(xpath='/member/ResourceType')
-    Timestamp = xml_models.DateField(xpath='/member/Timestamp', date_format='%Y-%m-%dT%H:%M:%SZ')
+    Timestamp = xml_models.DateField(xpath='/member/Timestamp',
+                                     date_format='%Y-%m-%dT%H:%M:%SZ')
     StackName = xml_models.CharField(xpath='/member/StackName')
-    ResourceProperties = xml_models.CollectionField(EventResourceProperties, xpath='/member/ResourceProperties')
-    PhysicalResourceId = xml_models.CharField(xpath='/member/PhysicalResourceId')
-    ResourceStatusData = xml_models.CharField(xpath='/member/ResourceStatusData')
-    LogicalResourceId = xml_models.CharField(xpath='/member/LogicalResourceId')
+    ResourceProperties = xml_models.CollectionField(EventResourceProperties,
+                                 xpath='/member/ResourceProperties')
+    PhysicalResourceId = xml_models.CharField(
+                                 xpath='/member/PhysicalResourceId')
+    ResourceStatusData = xml_models.CharField(
+                                 xpath='/member/ResourceStatusData')
+    LogicalResourceId = xml_models.CharField(
+                                xpath='/member/LogicalResourceId')
+
 
 class ErrorResponse(xml_models.Model):
     object_xpath = './/Error'

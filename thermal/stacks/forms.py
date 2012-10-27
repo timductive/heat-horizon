@@ -7,6 +7,7 @@ from horizon import forms
 from django.core.cache import cache
 #from django import forms
 
+
 class UploadTemplate(forms.SelfHandlingForm):
     upload_template = forms.FileField(required=False)
     http_url = forms.CharField(required=False)
@@ -19,10 +20,12 @@ class UploadTemplate(forms.SelfHandlingForm):
             # download from a given url
             url = request.POST['http_url']
             # TODO: make cache dir configurable via django settings
-            h = httplib2.Http(".cache", disable_ssl_certificate_validation=True)
+            # TODO: make disabling ssl verification configurable too
+            h = httplib2.Http(".cache",
+                              disable_ssl_certificate_validation=True)
             resp, template = h.request(url, "GET")
             if resp.status not in (200, 304):
-                messages.error(request, 'URL returned status code %s' % resp.status)
+                messages.error(request, 'URL returned status %s' % resp.status)
                 return False
         else:
             # neither file or url were given

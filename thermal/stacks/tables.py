@@ -20,6 +20,7 @@ class LaunchStack(tables.LinkAction):
     url = "horizon:thermal:stacks:upload"
     classes = ("ajax-modal", "btn-create")
 
+
 class DeleteStack(tables.BatchAction):
     name = "delete"
     action_present = _("Delete")
@@ -36,6 +37,7 @@ class DeleteStack(tables.BatchAction):
         stack = Stack.objects.get(StackName=stack_name)
         stack.delete()
 
+
 class StacksUpdateRow(tables.Row):
     ajax = True
 
@@ -47,6 +49,7 @@ class StacksUpdateRow(tables.Row):
             # getting a stack-does-not-exist error
             raise Http404
         return stack
+
 
 class ThermalStacksTable(tables.DataTable):
     STATUS_CHOICES = (

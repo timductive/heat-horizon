@@ -42,7 +42,7 @@ setuptools.setup(
         'Programming Language :: Python :: 2.6',
         'Environment :: No Input/Output (Daemon)',
     ],
-    package_data = {
+    package_data={
         'thermal': ['templates/thermal/*',
                     'stacks/templates/stacks/*',
                    ],

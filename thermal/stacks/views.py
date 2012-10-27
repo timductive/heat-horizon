@@ -22,12 +22,14 @@ from thermal.api import heatclient
 from .forms import UploadTemplate
 from .tabs import StackDetailTabs
 
+
 class IndexView(tables.DataTableView):
     table_class = ThermalStacksTable
     template_name = 'thermal/stacks/index.html'
 
     def get_data(self):
         return Stack.objects.all(self.request)
+
 
 class LaunchHeatView(generic.FormView):
     template_name = 'thermal/stacks/launch.html'
@@ -52,17 +54,20 @@ class LaunchHeatView(generic.FormView):
                 # TODO: fix this so the xml does't display
                 #err_xml = e._error_string[e._error_string.find('<'):]
                 #err = ErrorResponse(client, xml=err_xml)
-                #err_msg = e.message % {'reason': '%s %s' % (err.code, err.message)}
+                #err_msg = e.message % {'reason': '%s %s' % (err.code,
+                #                                            err.message)}
                 #import pdb
                 #pdb.set_trace()
                 messages.error(request, e)
                 return self.render_to_response({'form': form})
         return HttpResponseRedirect(self.success_url)
 
+
 class UploadView(forms.ModalFormView):
     form_class = UploadTemplate
     template_name = 'thermal/stacks/upload.html'
     success_url = reverse_lazy('horizon:thermal:stacks:launch')
+
 
 class DetailView(tabs.TabView):
     tab_group_class = StackDetailTabs

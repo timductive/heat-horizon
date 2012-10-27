@@ -7,7 +7,7 @@ class Thermal(horizon.Dashboard):
     name = _("Heat")
     slug = "thermal"
     panels = ('stacks', )  # Add your panels here.
-    default_panel = 'stacks'  # Specify the slug of the dashboard's default panel.
+    default_panel = 'stacks'  # the slug of the dashboard's default panel.
 
 
 horizon.register(Thermal)
