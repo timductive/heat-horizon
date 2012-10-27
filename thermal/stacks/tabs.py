@@ -3,8 +3,6 @@ from django.utils.translation import ugettext_lazy as _
 from horizon import exceptions
 from horizon import tabs
 
-from openstack_dashboard import api
-
 
 class OverviewTab(tabs.Tab):
     name = _("Overview")

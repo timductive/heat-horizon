@@ -4,8 +4,10 @@ import json
 
 from django.conf import settings
 from heat import client as heat_client
-from horizon.api.base import (APIResourceWrapper,
-                                          APIDictWrapper, url_for)
+try:
+    from openstack_dashboard.api.base import url_for
+except:
+    from horizon.api.base import url_for
 
 LOG = logging.getLogger(__name__)
 
@@ -25,7 +27,7 @@ heat_client.HeatClient.format_parameters = format_parameters
 def heatclient(request):
     insecure = getattr(settings, 'OPENSTACK_SSL_NO_VERIFY', False)
     LOG.debug('heatclient connection created using token "%s" and url "%s"' %
-              (request.user.token.id, url_for(request, 'heat')))
+              (request.user.token.id, url_for(request, 'cloudformation')))
     options = {'host': 'localhost',
                'port': 8000,
                'username': request.user.username,
