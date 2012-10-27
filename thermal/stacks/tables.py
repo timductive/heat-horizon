@@ -56,7 +56,8 @@ class ThermalStacksTable(tables.DataTable):
     TASK_DISPLAY_CHOICES = (
         ("image_snapshot", "Snapshotting"),
     )
-    tenant = tables.Column("name", verbose_name=_("Stack Name"))
+    tenant = tables.Column("name", verbose_name=_("Stack Name"),
+                           link=("horizon:thermal:stacks:detail"),)
     created = tables.Column("created", verbose_name=_("Created"))
     updated = tables.Column("updated", verbose_name=_("Updated"))
     status = tables.Column("status",

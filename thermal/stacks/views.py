@@ -3,8 +3,11 @@ import json
 from horizon import tables
 from horizon import forms
 from horizon import messages
+from horizon import exceptions
+from horizon import tabs
 
 from django.core.urlresolvers import reverse_lazy
+from django.core.urlresolvers import reverse
 from django.views.generic import TemplateView
 from django.http import HttpResponseRedirect
 from django.core.cache import cache
@@ -17,6 +20,7 @@ from thermal.models import ErrorResponse
 from thermal.api import heatclient
 
 from .forms import UploadTemplate
+from .tabs import StackDetailTabs
 
 class IndexView(tables.DataTableView):
     table_class = ThermalStacksTable
@@ -59,3 +63,33 @@ class UploadView(forms.ModalFormView):
     form_class = UploadTemplate
     template_name = 'thermal/stacks/upload.html'
     success_url = reverse_lazy('horizon:thermal:stacks:launch')
+
+class DetailView(tabs.TabView):
+    tab_group_class = StackDetailTabs
+    template_name = 'thermal/stacks/detail.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(DetailView, self).get_context_data(**kwargs)
+        context["stack"] = self.get_data(self.request)
+        return context
+
+    def get_data(self, request, **kwargs):
+        if not hasattr(self, "_stack"):
+            try:
+                stack_name = kwargs['stack_name']
+                stack = Stack.objects.get(request, StackName=stack_name)
+
+                #stack.events = api.server_security_groups(
+                #                           self.request, instance_id)
+            except:
+                redirect = reverse('horizon:thermal:stacks:index')
+                exceptions.handle(self.request,
+                                  _('Unable to retrieve details for '
+                                    'stack "%s".') % stack_name,
+                                    redirect=redirect)
+            self._stack = stack
+        return self._stack
+
+    def get_tabs(self, request, **kwargs):
+        stack = self.get_data(request, **kwargs)
+        return self.tab_group_class(request, stack=stack, **kwargs)

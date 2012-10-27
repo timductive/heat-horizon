@@ -1,0 +1,78 @@
+{% load i18n sizeformat %}
+
+<h3>{% trans "Stack Overview" %}</h3>
+
+<div class="info row-fluid detail">
+  <h4>{% trans "Info" %}</h4>
+  <hr class="header_rule">
+  <dl>
+    <dt>{% trans "Name" %}</dt>
+    <dd>{{ stack.name }}</dd>
+    <dt>{% trans "ID" %}</dt>
+    <dd>{{ stack.stackid }}</dd>
+    <dt>{% trans "Description" %}</dt>
+    <dd>{{ stack.description }}</dd>
+    <dt>{% trans "Timeout" %}</dt>
+    <dd>{{ stack.timeout }} Minutes</dd>
+    <dt>{% trans "Rollback" %}</dt>
+    <dd>{% if stack.disablerollback %}Disabled{% else %}Enabled{% endif %}</dd>
+  </dl>
+</div>
+
+<div class="status row-fluid detail">
+  <h4>{% trans "Status" %}</h4>
+  <hr class="header_rule">
+  <dl>
+    <dt>{% trans "Created" %}</dt>
+    <dd>{{ stack.created }}</dd>
+    <dt>{% trans "Last Updated" %}</dt>
+    <dd>{{ stack.updated }}</dd>
+    <dt>{% trans "Status" %}</dt>
+    <dd>{{ stack.status|title }}: {{ stack.status_reason }}</dd>
+  </dl>
+</div>
+
+<div class="parameters row-fluid detail">
+  <h4>{% trans "Parameters" %}</h4>
+  <hr class="header_rule">
+  <dl>
+    {% for parameter in stack.parameters %}
+    <dt>{{ parameter.id }}</dt>
+    <dd>{{ parameter.value }}</dd>
+    {% endfor %}
+  </dl>
+</div>
+
+<div class="outputs row-fluid detail">
+  <h4>{% trans "Outputs" %}</h4>
+  <hr class="header_rule">
+  <dl>
+    {% for output in stack.outputs %}
+    <dt>{{ output.id }}</dt>
+    <dd>{{ output.value }}</dd>
+    <dd>{{ output.description }}</dd>
+    {% endfor %}
+  </dl>
+</div>
+
+<div class="capabilities row-fluid detail">
+  <h4>{% trans "Capabilities" %}</h4>
+  <hr class="header_rule">
+  <dl>
+    {% for capability in stack.capabilities %}
+    <dt>{{ capability.id }}</dt>
+    <dd>{{ capability.value }}</dd>
+    {% endfor %}
+  </dl>
+</div>
+
+<div class="notifications row-fluid detail">
+  <h4>{% trans "Parameters" %}</h4>
+  <hr class="header_rule">
+  <dl>
+    {% for notification in stack.notifications %}
+    <dt>{{ notification.id }}</dt>
+    <dd>{{ notification.value }}</dd>
+    {% endfor %}
+  </dl>
+</div>

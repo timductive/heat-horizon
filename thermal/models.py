@@ -50,20 +50,41 @@ class HeatTemplate(object):
         ####form.base_fields.keyOrder.append('launch_ha')
         return form
 
+class StackParameter(xml_models.Model):
+    object_xpath = './/member'
+    id = xml_models.CharField(xpath='/member/ParameterKey')
+    value = xml_models.CharField(xpath='/member/ParameterValue')
+
+class StackOutput(xml_models.Model):
+    object_xpath = './/member'
+    id = xml_models.CharField(xpath='/member/OutputKey')
+    value = xml_models.CharField(xpath='/member/OutputValue')
+    description = xml_models.CharField(xpath='/member/Description')
+
 class Stack(xml_models.Model):
     object_xpath = './/member'
     rest_all = 'list_stacks'
     rest_get = 'describe_stacks'
     client = None
 
+    # common properties
     id = xml_models.CharField(xpath='/member/StackName')
     stackid = xml_models.CharField(xpath='/member/StackId')
     name = xml_models.CharField(xpath='/member/StackName')
     status = xml_models.CharField(xpath='/member/StackStatus')
-    description = xml_models.CharField(xpath='/member/TemplateDescription')
+    description = xml_models.CharField(xpath='/member/TemplateDescription',
+                                       alt_xpath='/member/Description')
     status_reason = xml_models.CharField(xpath='/member/StackStatusReason')
     created = xml_models.DateField(xpath='/member/CreationTime', date_format='%Y-%m-%dT%H:%M:%SZ')
     updated = xml_models.DateField(xpath='/member/LastUpdatedTime', date_format='%Y-%m-%dT%H:%M:%SZ')
+
+    # get (heat describe) properties
+    parameters = xml_models.CollectionField(StackParameter, xpath='/member/Parameters/member')
+    outputs = xml_models.CollectionField(StackOutput, xpath='/member/Outputs/member')
+    timeout = xml_models.IntField(xpath='/member/TimeoutInMinutes')
+    #capabilities = xml_models.CollectionField(StackCapabilities, xpath='/member/Capabilities/member')
+    #notifications = xml_models.CollectionField(StackNotifications, xpath='/member/NotificationARNs/member')
+    disablerollback = xml_models.BoolField(xpath='/member/DisableRollback')
 
     def __unicode__(self):
         return self.id

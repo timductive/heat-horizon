@@ -56,11 +56,14 @@ class BaseField:
         if not kw.has_key('xpath'):
             raise Exception('No XPath supplied for xml field')
         self.xpath = kw['xpath']
+        self.alt_xpath = kw.pop('alt_xpath', None)
         self._default = kw.pop('default', None)
             
     
     def _fetch_by_xpath(self, xml_doc, namespace):
         find = xpath.find_unique(xml_doc, self.xpath, namespace)
+        if find == None and self.alt_xpath:
+            find = xpath.find_unique(xml_doc, self.alt_xpath, namespace)
         if find == None:
             return self._default
         return find
@@ -229,7 +232,8 @@ class XmlModelManager(object):
     def count(self):
         raise NoRegisteredFinderError("foo")
         
-    def get(self, **kw):
+    def get(self, request, **kw):
+        self.request = request
         return XmlModelQuery(self, self.model, headers=self.headers).get(**kw)
 
     def all(self, request):
@@ -331,7 +335,7 @@ class Model:
         addresses = xml_models.CollectionField(Address, xpath="/Person/Addresses/Address")
         date_of_birth = xml_models.DateField(xpath="/Person/@DateOfBirth", date_format="%d-%m-%Y")
     """
-    def __init__(self, client, xml=None, dom=None):
+    def __init__(self, client=None, xml=None, dom=None):
         self._xml = xml
         self._dom = dom
         self._cache = {}
