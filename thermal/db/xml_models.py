@@ -267,7 +267,8 @@ class XmlModelManager(object):
             self.finders[tuple(sorted_field_names)] = (finders[key],
                                                        field_names)
 
-    def filter(self, **kw):
+    def filter(self, request, **kw):
+        self.request = request
         return XmlModelQuery(self, self.model,
                              headers=self.headers).filter(**kw)
 
@@ -369,7 +370,7 @@ class XmlModelQuery(object):
         return self.content
 
 
-class Model:
+class Model(object):
     __metaclass__ = ModelBase
     __doc__ = """
     A model can be constructed with either an xml string, or an appropriate

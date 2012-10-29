@@ -13,12 +13,12 @@ from django.http import HttpResponseRedirect
 from django.core.cache import cache
 from django.views import generic
 
-from thermal.stacks.tables import ThermalStacksTable
 from thermal.models import Stack
 from thermal.models import HeatTemplate
 from thermal.models import ErrorResponse
 from thermal.api import heatclient
 
+from .tables import ThermalStacksTable
 from .forms import UploadTemplate
 from .tabs import StackDetailTabs
 
@@ -43,6 +43,8 @@ class LaunchHeatView(generic.FormView):
 
     def post(self, request, *args, **kw):
         template = cache.get('heat_template_' + request.user.username)
+        if template is None:
+            return HttpResponseRedirect('horizon:thermal:stacks:upload')
         t = HeatTemplate(template, self.form_class)
         form = t.form(request.POST)
         client = heatclient(request)

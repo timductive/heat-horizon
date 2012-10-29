@@ -5,7 +5,6 @@ from horizon import messages
 from horizon import forms
 
 from django.core.cache import cache
-#from django import forms
 
 
 class UploadTemplate(forms.SelfHandlingForm):

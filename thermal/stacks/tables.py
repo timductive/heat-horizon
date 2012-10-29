@@ -5,6 +5,7 @@ from django.utils.http import urlencode
 from django.http import Http404
 from django.template.defaultfilters import title
 from django.utils.translation import ugettext_lazy as _
+from django.core.urlresolvers import reverse
 
 from horizon import tables
 from horizon.utils.filters import replace_underscores
@@ -34,7 +35,7 @@ class DeleteStack(tables.BatchAction):
             return True
 
     def action(self, request, stack_name):
-        stack = Stack.objects.get(StackName=stack_name)
+        stack = Stack.objects.get(request, StackName=stack_name)
         stack.delete()
 
 
@@ -43,7 +44,7 @@ class StacksUpdateRow(tables.Row):
 
     def get_data(self, request, stack_name):
         try:
-            stack = Stack.objects.get(StackName=stack_name)
+            stack = Stack.objects.get(request, StackName=stack_name)
         except:
             # TODO: read the actual error and make sure we're
             # getting a stack-does-not-exist error
@@ -76,3 +77,40 @@ class ThermalStacksTable(tables.DataTable):
         table_actions = (LaunchStack, DeleteStack,)
         row_class = StacksUpdateRow
         row_actions = (DeleteStack, )
+
+
+def thermal_events_table_instance_name(datum):
+    return '%s.%s' % (datum.stackname, datum.logicalresourceid) 
+
+def thermal_events_table_instance_link(datum):
+    if datum.physicalresourceid is None or \
+       datum.physicalresourceid == 'None':
+        # All the Physical Resource ID's are sometimes 'None'
+        # return None when this is the case to indicate not
+        # to link the instance name
+        return None
+    # Otherwise link the project instance details
+    url = reverse('horizon:project:instances:detail',
+                  args=(datum.physicalresourceid,))
+    return url
+
+class ThermalEventsTable(tables.DataTable):
+    STATUS_CHOICES = (
+        ("Create Complete", True),
+        ("Create Failed", False),
+    )
+    timestamp = tables.Column("timestamp", verbose_name=_("Timestamp"))
+    stackname = tables.Column("stackname", verbose_name=_("stackname"))
+    logical_resource = tables.Column(thermal_events_table_instance_name,
+                                     verbose_name=_("Logical Resource"),
+                                     link=thermal_events_table_instance_link,)
+    status = tables.Column("resourcestatus",
+                           filters=(title, replace_underscores),
+                           verbose_name=_("Status"),)
+
+    statusreason = tables.Column("resourcestatusreason",
+                                 verbose_name=_("Status Reason"),)
+
+    class Meta:
+        name = " "
+        verbose_name = _(" ")

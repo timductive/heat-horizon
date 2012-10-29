@@ -3,6 +3,10 @@ from django.utils.translation import ugettext_lazy as _
 from horizon import exceptions
 from horizon import tabs
 
+from thermal.models import Event
+
+from .tables import ThermalEventsTable
+
 
 class OverviewTab(tabs.Tab):
     name = _("Overview")
@@ -20,16 +24,15 @@ class EventsTab(tabs.Tab):
     preload = False
 
     def get_context_data(self, request):
-        instance = self.tab_group.kwargs['instance']
+        stack = self.tab_group.kwargs['stack']
         try:
-            data = api.server_console_output(request,
-                                            instance.id,
-                                            tail_length=35)
+            events = Event.objects.filter(request, StackName=stack.name)
         except:
-            data = _('Unable to get log for instance "%s".') % instance.id
-            exceptions.handle(request, ignore=True)
-        return {"instance": instance,
-                "console_log": data}
+            events = []
+            messages.error(_('Unable to get events for stack "%s".') % stack.name)
+            #exceptions.handle(request, ignore=True)
+        return {"stack": stack,
+                "table": ThermalEventsTable(request, data=events), }
 
 
 class StackDetailTabs(tabs.TabGroup):

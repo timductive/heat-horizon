@@ -55,6 +55,63 @@ class HeatTemplate(object):
         return form
 
 
+class EventResourceProperties(xml_models.Model):
+    NovaSchedulerHints = xml_models.CharField(
+                         xpath='/member/ResourceProperties/NovaSchedulerHints')
+    UserData = xml_models.CharField(
+               xpath='/member/ResourceProperties/UserData')
+    SourceDestCheck = xml_models.CharField(
+                      xpath='/member/ResourceProperties/SourceDestCheck')
+    AvailabilityZone = xml_models.CharField(
+                       xpath='/member/ResourceProperties/AvailabilityZone')
+    Monitoring = xml_models.CharField(
+                 xpath='/member/ResourceProperties/Monitoring')
+    Volumes = xml_models.CharField(xpath='/member/ResourceProperties/Volumes')
+    Tags = xml_models.CharField(xpath='/member/ResourceProperties/Tags')
+    Tenancy = xml_models.CharField(xpath='/member/ResourceProperties/Tenancy')
+    PlacementGroupName = xml_models.CharField(
+                         xpath='/member/ResourceProperties/PlacementGroupName')
+    ImageId = xml_models.CharField(xpath='/member/ResourceProperties/ImageId')
+    SubnetId = xml_models.CharField(
+               xpath='/member/ResourceProperties/SubnetId')
+    KeyName = xml_models.CharField(xpath='/member/ResourceProperties/KeyName')
+    SecurityGroups = xml_models.CharField(
+                     xpath='/member/ResourceProperties/SecurityGroups')
+    SecurityGroupIds = xml_models.CharField(
+                       xpath='/member/ResourceProperties/SecurityGroupIds')
+    KernelId = xml_models.CharField(
+               xpath='/member/ResourceProperties/KernelId')
+    RamDiskId = xml_models.CharField(
+                xpath='/member/ResourceProperties/RamDiskId')
+    DisableApiTermination = xml_models.CharField(
+                      xpath='/member/ResourceProperties/DisableApiTermination')
+    InstanceType = xml_models.CharField(
+                   xpath='/member/ResourceProperties/InstanceType')
+    PrivateIpAddress = xml_models.CharField(
+                       xpath='/member/ResourceProperties/PrivateIpAddress')
+
+
+class Event(xml_models.Model):
+    object_xpath = './/member'
+    rest_all = 'list_stack_events'
+
+    id = xml_models.IntField(xpath='/member/EventId')
+    stackid = xml_models.CharField(xpath='/member/StackId')
+    resourcestatus = xml_models.CharField(xpath='/member/ResourceStatus')
+    resourcetype = xml_models.CharField(xpath='/member/ResourceType')
+    timestamp = xml_models.DateField(xpath='/member/Timestamp',
+                                     date_format='%Y-%m-%dT%H:%M:%SZ')
+    stackname = xml_models.CharField(xpath='/member/StackName')
+    resourceproperties = xml_models.CollectionField(EventResourceProperties,
+                                 xpath='/member/ResourceProperties')
+    physicalresourceid = xml_models.CharField(
+                                 xpath='/member/PhysicalResourceId')
+    resourcestatusreason = xml_models.CharField(
+                                 xpath='/member/ResourceStatusReason')
+    logicalresourceid = xml_models.CharField(
+                                xpath='/member/LogicalResourceId')
+
+
 class StackParameter(xml_models.Model):
     object_xpath = './/member'
     id = xml_models.CharField(xpath='/member/ParameterKey')
@@ -72,7 +129,6 @@ class Stack(xml_models.Model):
     object_xpath = './/member'
     rest_all = 'list_stacks'
     rest_get = 'describe_stacks'
-    client = None
 
     # common properties
     id = xml_models.CharField(xpath='/member/StackName')
@@ -141,63 +197,6 @@ class StackCreate(xml_models.Model):
     StackName = xml_models.CharField(xpath='/StackName')
     Description = xml_models.CharField(xpath='/Description')
     Parameters = xml_models.CharField(xpath='/Parameters')
-
-
-class EventResourceProperties(xml_models.Model):
-    NovaSchedulerHints = xml_models.CharField(
-                         xpath='/member/ResourceProperties/NovaSchedulerHints')
-    UserData = xml_models.CharField(
-               xpath='/member/ResourceProperties/UserData')
-    SourceDestCheck = xml_models.CharField(
-                      xpath='/member/ResourceProperties/SourceDestCheck')
-    AvailabilityZone = xml_models.CharField(
-                       xpath='/member/ResourceProperties/AvailabilityZone')
-    Monitoring = xml_models.CharField(
-                 xpath='/member/ResourceProperties/Monitoring')
-    Volumes = xml_models.CharField(xpath='/member/ResourceProperties/Volumes')
-    Tags = xml_models.CharField(xpath='/member/ResourceProperties/Tags')
-    Tenancy = xml_models.CharField(xpath='/member/ResourceProperties/Tenancy')
-    PlacementGroupName = xml_models.CharField(
-                         xpath='/member/ResourceProperties/PlacementGroupName')
-    ImageId = xml_models.CharField(xpath='/member/ResourceProperties/ImageId')
-    SubnetId = xml_models.CharField(
-               xpath='/member/ResourceProperties/SubnetId')
-    KeyName = xml_models.CharField(xpath='/member/ResourceProperties/KeyName')
-    SecurityGroups = xml_models.CharField(
-                     xpath='/member/ResourceProperties/SecurityGroups')
-    SecurityGroupIds = xml_models.CharField(
-                       xpath='/member/ResourceProperties/SecurityGroupIds')
-    KernelId = xml_models.CharField(
-               xpath='/member/ResourceProperties/KernelId')
-    RamDiskId = xml_models.CharField(
-                xpath='/member/ResourceProperties/RamDiskId')
-    DisableApiTermination = xml_models.CharField(
-                      xpath='/member/ResourceProperties/DisableApiTermination')
-    InstanceType = xml_models.CharField(
-                   xpath='/member/ResourceProperties/InstanceType')
-    PrivateIpAddress = xml_models.CharField(
-                       xpath='/member/ResourceProperties/PrivateIpAddress')
-
-
-class Event(xml_models.Model):
-    object_xpath = './/member'
-    rest_call = 'list_stack_events'
-
-    EventId = xml_models.IntField(xpath='/member/EventId')
-    StackId = xml_models.CharField(xpath='/member/StackId')
-    ResourceStatus = xml_models.CharField(xpath='/member/ResourceStatus')
-    ResourceType = xml_models.CharField(xpath='/member/ResourceType')
-    Timestamp = xml_models.DateField(xpath='/member/Timestamp',
-                                     date_format='%Y-%m-%dT%H:%M:%SZ')
-    StackName = xml_models.CharField(xpath='/member/StackName')
-    ResourceProperties = xml_models.CollectionField(EventResourceProperties,
-                                 xpath='/member/ResourceProperties')
-    PhysicalResourceId = xml_models.CharField(
-                                 xpath='/member/PhysicalResourceId')
-    ResourceStatusData = xml_models.CharField(
-                                 xpath='/member/ResourceStatusData')
-    LogicalResourceId = xml_models.CharField(
-                                xpath='/member/LogicalResourceId')
 
 
 class ErrorResponse(xml_models.Model):
