@@ -9,6 +9,6 @@ urlpatterns = patterns('',
     url(r'^$', IndexView.as_view(), name='index'),
     url(r'^launch/$', LaunchHeatView.as_view(), name='launch'),
     url(r'^upload/$', UploadView.as_view(), name='upload'),
-    url(r'^stack/(?P<stack_name>[^/]+)/$', DetailView.as_view(),
-                                           name='detail'),
+    url(r'^stack/(?P<stack_id>[^/]+)/$',
+                      DetailView.as_view(), name='detail'),
 )

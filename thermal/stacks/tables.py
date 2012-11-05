@@ -9,8 +9,11 @@ from django.core.urlresolvers import reverse
 
 from horizon import tables
 from horizon.utils.filters import replace_underscores
+from horizon import messages
 
-from thermal.models import Stack
+from heatclient import exc
+
+from thermal.api import heatclient
 
 LOG = logging.getLogger(__name__)
 
@@ -34,22 +37,26 @@ class DeleteStack(tables.BatchAction):
         if stack:
             return True
 
-    def action(self, request, stack_name):
-        stack = Stack.objects.get(request, StackName=stack_name)
-        stack.delete()
+    def action(self, request, stack_id):
+        heatclient(request).stacks.delete(stack_id)
 
 
 class StacksUpdateRow(tables.Row):
     ajax = True
 
-    def get_data(self, request, stack_name):
+    def get_data(self, request, stack_id):
         try:
-            stack = Stack.objects.get(request, StackName=stack_name)
-        except:
-            # TODO: read the actual error and make sure we're
-            # getting a stack-does-not-exist error
+            return heatclient(request).stacks.get(stack_id)
+        except exc.HTTPNotFound:
+            # returning 404 to the ajax call removes the
+            # row from the table on the ui
             raise Http404
-        return stack
+        except Exception, e: 
+            messages.error(request, e)
+
+def thermal_stack_link(datum):
+    return reverse("horizon:thermal:stacks:detail",
+                   args=(datum.stack_name, datum.id))
 
 
 class ThermalStacksTable(tables.DataTable):
@@ -57,14 +64,11 @@ class ThermalStacksTable(tables.DataTable):
         ("Create Complete", True),
         ("Create Failed", False),
     )
-    TASK_DISPLAY_CHOICES = (
-        ("image_snapshot", "Snapshotting"),
-    )
-    tenant = tables.Column("name", verbose_name=_("Stack Name"),
-                           link=("horizon:thermal:stacks:detail"),)
-    created = tables.Column("created", verbose_name=_("Created"))
-    updated = tables.Column("updated", verbose_name=_("Updated"))
-    status = tables.Column("status",
+    name = tables.Column("stack_name", verbose_name=_("Stack Name"),
+                           link=thermal_stack_link,)
+    created = tables.Column("creation_time", verbose_name=_("Created"))
+    updated = tables.Column("updated_time", verbose_name=_("Updated"))
+    status = tables.Column("stack_status",
                            filters=(title, replace_underscores),
                            verbose_name=_("Status"),
                            status=True,

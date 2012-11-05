@@ -3,8 +3,6 @@ from django.utils.translation import ugettext_lazy as _
 from horizon import exceptions
 from horizon import tabs
 
-from thermal.models import Event
-
 from .tables import ThermalEventsTable
 
 
@@ -37,5 +35,5 @@ class EventsTab(tabs.Tab):
 
 class StackDetailTabs(tabs.TabGroup):
     slug = "stack_details"
-    tabs = (OverviewTab, EventsTab)
+    tabs = (OverviewTab,)# EventsTab)
     sticky = True

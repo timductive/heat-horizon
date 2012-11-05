@@ -13,9 +13,7 @@ from django.http import HttpResponseRedirect
 from django.core.cache import cache
 from django.views import generic
 
-from thermal.models import Stack
 from thermal.models import HeatTemplate
-from thermal.models import ErrorResponse
 from thermal.api import heatclient
 
 from .tables import ThermalStacksTable
@@ -27,8 +25,18 @@ class IndexView(tables.DataTableView):
     table_class = ThermalStacksTable
     template_name = 'thermal/stacks/index.html'
 
+    def _inject_name(self, stack):
+        # Horizon expects the object to have a name property
+        # in order for the delete functionality to work properly
+        # this function is mapped onto a stack object
+        # setting the name property equal to the stack_name
+        stack.name = stack.stack_name
+        return stack
+
     def get_data(self):
-        return Stack.objects.all(self.request)
+        stacks = heatclient(self.request).stacks.list()
+        stacks = map(self._inject_name, stacks)
+        return stacks
 
 
 class LaunchHeatView(generic.FormView):
@@ -50,16 +58,12 @@ class LaunchHeatView(generic.FormView):
         client = heatclient(request)
         if form.is_valid():
             try:
-                s = Stack(client)
-                result = s.launch(template, form.cleaned_data)
+                stack_name = form.cleaned_data.pop('stack_name')
+                params = {'stack_name': stack_name,
+                          'template': t.json,
+                          'parameters': form.cleaned_data,}
+                result = client.stacks.create(**params)
             except Exception, e:
-                # TODO: fix this so the xml does't display
-                #err_xml = e._error_string[e._error_string.find('<'):]
-                #err = ErrorResponse(client, xml=err_xml)
-                #err_msg = e.message % {'reason': '%s %s' % (err.code,
-                #                                            err.message)}
-                #import pdb
-                #pdb.set_trace()
                 messages.error(request, e)
                 return self.render_to_response({'form': form})
         return HttpResponseRedirect(self.success_url)
@@ -82,19 +86,15 @@ class DetailView(tabs.TabView):
 
     def get_data(self, request, **kwargs):
         if not hasattr(self, "_stack"):
+            print kwargs
+            stack_id = kwargs['stack_id']
             try:
-                stack_name = kwargs['stack_name']
-                stack = Stack.objects.get(request, StackName=stack_name)
-
-                #stack.events = api.server_security_groups(
-                #                           self.request, instance_id)
-            except:
+                stack = heatclient(request).stacks.get(stack_id)
+                self._stack = stack
+            except Exception, e:
+                messages.error(request, e)
                 redirect = reverse('horizon:thermal:stacks:index')
-                exceptions.handle(self.request,
-                                  _('Unable to retrieve details for '
-                                    'stack "%s".') % stack_name,
-                                    redirect=redirect)
-            self._stack = stack
+                return HttpResponseRedirect(redirect)
         return self._stack
 
     def get_tabs(self, request, **kwargs):

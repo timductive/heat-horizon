@@ -3,7 +3,7 @@ import logging
 import json
 
 from django.conf import settings
-from heat import client as heat_client
+from heatclient import client as heat_client
 try:
     from openstack_dashboard.api.base import url_for
 except:
@@ -13,33 +13,28 @@ LOG = logging.getLogger(__name__)
 
 ### Heat Client ###
 
-
-def format_parameters(self, params):
+def format_parameters(params):
     parameters = {}
     for count, p in enumerate(params, 1):
         parameters['Parameters.member.%d.ParameterKey' % count] = p
         parameters['Parameters.member.%d.ParameterValue' % count] = params[p]
     return parameters
 
-heat_client.HeatClient.format_parameters = format_parameters
-
-
 def heatclient(request):
+    #TODO: unhardcode api_version
+    api_version = "1"
     insecure = getattr(settings, 'OPENSTACK_SSL_NO_VERIFY', False)
+    endpoint = url_for(request, 'orchestration')
     LOG.debug('heatclient connection created using token "%s" and url "%s"' %
-              (request.user.token.id, url_for(request, 'cloudformation')))
-    options = {'host': 'localhost',
-               'port': 8000,
-               'username': request.user.username,
-               #'password': request.user.token.id, ###NOPE
-               'password': 'verybadpass',
-               # TODO: Why is this not tenant_name?
-               #'tenant': request.user.tenant_name,
-               'tenant': request.user.username,
-               'auth_url': settings.OPENSTACK_KEYSTONE_URL,
-               #'auth_token': request.user.token.id, ###NOPE
-               'auth_token': 'd57638a3cced1564cc0d',
-               'region': 'RegionOne',
-               'insecure': insecure,
-              }
-    return heat_client.get_client(**options)
+              (request.user.token.id, endpoint))
+    kwargs = {
+            'token': request.user.token.id,
+            'insecure': insecure,
+            #'timeout': args.timeout,
+            #'ca_file': args.ca_file,
+            #'cert_file': args.cert_file,
+            #'key_file': args.key_file,
+        }
+    client = heat_client.Client(api_version, endpoint, **kwargs)
+    client.format_parameters = format_parameters
+    return client

@@ -3,7 +3,6 @@ import collections
 
 from horizon import forms
 from django.db import models
-from thermal.db import xml_models
 
 
 class HeatTemplate(object):
@@ -26,7 +25,7 @@ class HeatTemplate(object):
         returns a form object created from the heat template
         '''
         # Collect the fields
-        fields = {'StackName': forms.CharField(
+        fields = {'stack_name': forms.CharField(
                                    help_text='Unique name for the stack')}
         for param, val in self.json['Parameters'].items():
             if 'AllowedValues' in val:
@@ -50,158 +49,6 @@ class HeatTemplate(object):
         # of type collections.OrderedDict
         # use object_pairs_hook=collections.OrderedDict on json.loads
         form.base_fields.keyOrder = self.json['Parameters'].keys()
-        form.base_fields.keyOrder.insert(0, 'StackName')
+        form.base_fields.keyOrder.insert(0, 'stack_name')
         ####form.base_fields.keyOrder.append('launch_ha')
         return form
-
-
-class EventResourceProperties(xml_models.Model):
-    NovaSchedulerHints = xml_models.CharField(
-                         xpath='/member/ResourceProperties/NovaSchedulerHints')
-    UserData = xml_models.CharField(
-               xpath='/member/ResourceProperties/UserData')
-    SourceDestCheck = xml_models.CharField(
-                      xpath='/member/ResourceProperties/SourceDestCheck')
-    AvailabilityZone = xml_models.CharField(
-                       xpath='/member/ResourceProperties/AvailabilityZone')
-    Monitoring = xml_models.CharField(
-                 xpath='/member/ResourceProperties/Monitoring')
-    Volumes = xml_models.CharField(xpath='/member/ResourceProperties/Volumes')
-    Tags = xml_models.CharField(xpath='/member/ResourceProperties/Tags')
-    Tenancy = xml_models.CharField(xpath='/member/ResourceProperties/Tenancy')
-    PlacementGroupName = xml_models.CharField(
-                         xpath='/member/ResourceProperties/PlacementGroupName')
-    ImageId = xml_models.CharField(xpath='/member/ResourceProperties/ImageId')
-    SubnetId = xml_models.CharField(
-               xpath='/member/ResourceProperties/SubnetId')
-    KeyName = xml_models.CharField(xpath='/member/ResourceProperties/KeyName')
-    SecurityGroups = xml_models.CharField(
-                     xpath='/member/ResourceProperties/SecurityGroups')
-    SecurityGroupIds = xml_models.CharField(
-                       xpath='/member/ResourceProperties/SecurityGroupIds')
-    KernelId = xml_models.CharField(
-               xpath='/member/ResourceProperties/KernelId')
-    RamDiskId = xml_models.CharField(
-                xpath='/member/ResourceProperties/RamDiskId')
-    DisableApiTermination = xml_models.CharField(
-                      xpath='/member/ResourceProperties/DisableApiTermination')
-    InstanceType = xml_models.CharField(
-                   xpath='/member/ResourceProperties/InstanceType')
-    PrivateIpAddress = xml_models.CharField(
-                       xpath='/member/ResourceProperties/PrivateIpAddress')
-
-
-class Event(xml_models.Model):
-    object_xpath = './/member'
-    rest_all = 'list_stack_events'
-
-    id = xml_models.IntField(xpath='/member/EventId')
-    stackid = xml_models.CharField(xpath='/member/StackId')
-    resourcestatus = xml_models.CharField(xpath='/member/ResourceStatus')
-    resourcetype = xml_models.CharField(xpath='/member/ResourceType')
-    timestamp = xml_models.DateField(xpath='/member/Timestamp',
-                                     date_format='%Y-%m-%dT%H:%M:%SZ')
-    stackname = xml_models.CharField(xpath='/member/StackName')
-    resourceproperties = xml_models.CollectionField(EventResourceProperties,
-                                 xpath='/member/ResourceProperties')
-    physicalresourceid = xml_models.CharField(
-                                 xpath='/member/PhysicalResourceId')
-    resourcestatusreason = xml_models.CharField(
-                                 xpath='/member/ResourceStatusReason')
-    logicalresourceid = xml_models.CharField(
-                                xpath='/member/LogicalResourceId')
-
-
-class StackParameter(xml_models.Model):
-    object_xpath = './/member'
-    id = xml_models.CharField(xpath='/member/ParameterKey')
-    value = xml_models.CharField(xpath='/member/ParameterValue')
-
-
-class StackOutput(xml_models.Model):
-    object_xpath = './/member'
-    id = xml_models.CharField(xpath='/member/OutputKey')
-    value = xml_models.CharField(xpath='/member/OutputValue')
-    description = xml_models.CharField(xpath='/member/Description')
-
-
-class Stack(xml_models.Model):
-    object_xpath = './/member'
-    rest_all = 'list_stacks'
-    rest_get = 'describe_stacks'
-
-    # common properties
-    id = xml_models.CharField(xpath='/member/StackName')
-    stackid = xml_models.CharField(xpath='/member/StackId')
-    name = xml_models.CharField(xpath='/member/StackName')
-    status = xml_models.CharField(xpath='/member/StackStatus')
-    description = xml_models.CharField(xpath='/member/TemplateDescription',
-                                       alt_xpath='/member/Description')
-    status_reason = xml_models.CharField(xpath='/member/StackStatusReason')
-    created = xml_models.DateField(xpath='/member/CreationTime',
-                                   date_format='%Y-%m-%dT%H:%M:%SZ')
-    updated = xml_models.DateField(xpath='/member/LastUpdatedTime',
-                                   date_format='%Y-%m-%dT%H:%M:%SZ')
-
-    # get (heat describe) properties
-    parameters = xml_models.CollectionField(StackParameter,
-                                            xpath='/member/Parameters/member')
-    outputs = xml_models.CollectionField(StackOutput,
-                                         xpath='/member/Outputs/member')
-    timeout = xml_models.IntField(xpath='/member/TimeoutInMinutes')
-    #capabilities = xml_models.CollectionField(StackCapabilities,
-    #                                      xpath='/member/Capabilities/member')
-    #notifications = xml_models.CollectionField(StackNotifications,
-    #                                  xpath='/member/NotificationARNs/member')
-    disablerollback = xml_models.BoolField(xpath='/member/DisableRollback')
-
-    def __unicode__(self):
-        return self.id
-
-    def launch(self, template, parameters):
-        '''
-        take a json object and QueryDict of parameters
-        and calls heat's api to launch a stack
-        '''
-        heat_template = json.loads(template)
-
-        stack_name = parameters['StackName']
-        del parameters['StackName']  # can't use pop because it's a QueryDict
-
-        launch_parameters = {}
-        for param in parameters:
-            # have to be explicit like this because data is in a QueryDict
-            if param in heat_template['Parameters'].keys():
-                launch_parameters[param] = parameters[param]
-
-        formatted_parameters = self.client.format_parameters(launch_parameters)
-        formatted_parameters.update({'StackName': stack_name,
-                           'TimeoutInMinutes': 5,
-                           'TemplateBody': template,
-                            #json.dumps(template, sort_keys=False),
-                          })
-        # get the form params
-        result = self.client.create_stack(**formatted_parameters)
-        return result
-
-    def delete(self):
-        parameters = {'StackName': self.name}
-        result = self.client.delete_stack(**parameters)
-        return result
-
-
-class StackCreate(xml_models.Model):
-    object_xpath = './/CreateStackResult'
-
-    StackId = xml_models.CharField(xpath='/StackId')
-    StackName = xml_models.CharField(xpath='/StackName')
-    Description = xml_models.CharField(xpath='/Description')
-    Parameters = xml_models.CharField(xpath='/Parameters')
-
-
-class ErrorResponse(xml_models.Model):
-    object_xpath = './/Error'
-
-    message = xml_models.CharField(xpath='/Message')
-    code = xml_models.CharField(xpath='/Code')
-    type = xml_models.CharField(xpath='/Type')
