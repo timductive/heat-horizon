@@ -52,3 +52,19 @@ class HeatTemplate(object):
         form.base_fields.keyOrder.insert(0, 'stack_name')
         ####form.base_fields.keyOrder.append('launch_ha')
         return form
+
+
+class GitContent(object):
+    def __init__(self, content):
+        self.id = content['name']
+        self.content = content
+
+    def __getattr__(self, key):
+        # got lazy, these should probably
+        return self.content[key]
+
+
+class AWSContent(object):#xml_models.Model):
+    object_xpath = './/Content'
+    #id = xml_models.CharField(xpath='/Content/Key')
+    #name = xml_models.CharField(xpath='/Content/Key')

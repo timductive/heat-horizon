@@ -1,0 +1,11 @@
+{% load i18n sizeformat %}
+
+<div class="catalogue_selecter_wrapper">
+  <form action="" method="get" id="date_form" class="form-horizontal">
+    <h3>{% trans "Select a catalogue" %}: </h3>
+    <div class="form-row">
+      {{ form.catalogue }}
+      <button class="btn btn-small" type="submit">{% trans "Get Catalogue" %}</button>
+    </div>
+  </form>
+</div>

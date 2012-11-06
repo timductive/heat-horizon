@@ -45,12 +45,15 @@ class LaunchHeatView(generic.FormView):
 
     def get(self, request, *args, **kw):
         template = cache.get('heat_template_' + request.user.username)
+        template_name = cache.get('heat_template_name_' + request.user.username)
         t = HeatTemplate(template, self.form_class)
-        context = {'form': t.form()}
+        context = {'form': t.form(),
+                   'template_name': template_name}
         return self.render_to_response(context)
 
     def post(self, request, *args, **kw):
         template = cache.get('heat_template_' + request.user.username)
+        template_name = cache.get('heat_template_name_' + request.user.username)
         if template is None:
             return HttpResponseRedirect('horizon:thermal:stacks:upload')
         t = HeatTemplate(template, self.form_class)
@@ -65,7 +68,8 @@ class LaunchHeatView(generic.FormView):
                 result = client.stacks.create(**params)
             except Exception, e:
                 messages.error(request, e)
-                return self.render_to_response({'form': form})
+                return self.render_to_response({'form': form,
+                                                'template_name': template_name})
         return HttpResponseRedirect(self.success_url)
 
 
@@ -86,7 +90,6 @@ class DetailView(tabs.TabView):
 
     def get_data(self, request, **kwargs):
         if not hasattr(self, "_stack"):
-            print kwargs
             stack_id = kwargs['stack_id']
             try:
                 stack = heatclient(request).stacks.get(stack_id)
