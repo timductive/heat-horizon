@@ -6,7 +6,7 @@ import horizon
 class Thermal(horizon.Dashboard):
     name = _("Heat")
     slug = "thermal"
-    panels = ('stacks', 'catalogues')  # Add your panels here.
+    panels = ('stacks', 'catalogues', 'designer')  # Add your panels here.
     default_panel = 'stacks'  # the slug of the dashboard's default panel.
 
 
