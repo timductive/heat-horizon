@@ -7,15 +7,15 @@
   <hr class="header_rule">
   <dl>
     <dt>{% trans "Name" %}</dt>
-    <dd>{{ stack.name }}</dd>
+    <dd>{{ stack.stack_name }}</dd>
     <dt>{% trans "ID" %}</dt>
-    <dd>{{ stack.stackid }}</dd>
+    <dd>{{ stack.id }}</dd>
     <dt>{% trans "Description" %}</dt>
     <dd>{{ stack.description }}</dd>
     <dt>{% trans "Timeout" %}</dt>
-    <dd>{{ stack.timeout }} Minutes</dd>
+    <dd>{{ stack.timeout_mins }} Minutes</dd>
     <dt>{% trans "Rollback" %}</dt>
-    <dd>{% if stack.disablerollback %}Disabled{% else %}Enabled{% endif %}</dd>
+    <dd>{% if stack.disable_rollback %}Disabled{% else %}Enabled{% endif %}</dd>
   </dl>
 </div>
 
@@ -24,11 +24,11 @@
   <hr class="header_rule">
   <dl>
     <dt>{% trans "Created" %}</dt>
-    <dd>{{ stack.created }}</dd>
+    <dd>{{ stack.creation_time }}</dd>
     <dt>{% trans "Last Updated" %}</dt>
-    <dd>{{ stack.updated }}</dd>
+    <dd>{{ stack.updated_time }}</dd>
     <dt>{% trans "Status" %}</dt>
-    <dd>{{ stack.status|title }}: {{ stack.status_reason }}</dd>
+    <dd>{{ stack.stack_status|title }}: {{ stack.stack_status_reason }}</dd>
   </dl>
 </div>
 
@@ -36,14 +36,14 @@
   <h4>{% trans "Parameters" %}</h4>
   <hr class="header_rule">
   <dl>
-    {% for parameter in stack.parameters %}
-    <dt>{{ parameter.id }}</dt>
-    <dd>{{ parameter.value }}</dd>
+    {% for key, value in stack.parameters.items %}
+    <dt>{{ key }}</dt>
+    <dd>{{ value }}</dd>
     {% endfor %}
   </dl>
 </div>
 
-<div class="outputs row-fluid detail">
+<!--div class="outputs row-fluid detail">
   <h4>{% trans "Outputs" %}</h4>
   <hr class="header_rule">
   <dl>
@@ -75,4 +75,4 @@
     <dd>{{ notification.value }}</dd>
     {% endfor %}
   </dl>
-</div>
+</div-->

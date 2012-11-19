@@ -1,5 +1,6 @@
 from django.utils.translation import ugettext_lazy as _
 
+from horizon import messages
 from horizon import exceptions
 from horizon import tabs
 
@@ -24,10 +25,10 @@ class EventsTab(tabs.Tab):
     def get_context_data(self, request):
         stack = self.tab_group.kwargs['stack']
         try:
-            events = Event.objects.filter(request, StackName=stack.name)
+            events = Event.objects.filter(request, StackName=stack.stack_name)
         except:
             events = []
-            messages.error(_('Unable to get events for stack "%s".') % stack.name)
+            messages.error(request,_('Unable to get events for stack "%s".') % stack.stack_name)
             #exceptions.handle(request, ignore=True)
         return {"stack": stack,
                 "table": ThermalEventsTable(request, data=events), }
@@ -35,5 +36,5 @@ class EventsTab(tabs.Tab):
 
 class StackDetailTabs(tabs.TabGroup):
     slug = "stack_details"
-    tabs = (OverviewTab,)# EventsTab)
+    tabs = (OverviewTab, EventsTab)
     sticky = True

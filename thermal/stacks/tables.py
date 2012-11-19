@@ -54,10 +54,6 @@ class StacksUpdateRow(tables.Row):
         except Exception, e: 
             messages.error(request, e)
 
-def thermal_stack_link(datum):
-    return reverse("horizon:thermal:stacks:detail",
-                   args=(datum.stack_name, datum.id))
-
 
 class ThermalStacksTable(tables.DataTable):
     STATUS_CHOICES = (
@@ -65,7 +61,7 @@ class ThermalStacksTable(tables.DataTable):
         ("Create Failed", False),
     )
     name = tables.Column("stack_name", verbose_name=_("Stack Name"),
-                           link=thermal_stack_link,)
+                           link="horizon:thermal:stacks:detail",)       
     created = tables.Column("creation_time", verbose_name=_("Created"))
     updated = tables.Column("updated_time", verbose_name=_("Updated"))
     status = tables.Column("stack_status",
