@@ -4,10 +4,12 @@
     <label>Template Description</label>
     <input type="text" name="description">
 <a href="#" onClick="javascript:add_resource();">Add Resource</a>
+<a href='{% url horizon:thermal:designer:resource %}'  id="parameter__edit_parameter" class="btn btn-small ajax-modal btn-create">Add Resource</a>
 <div id="designer" class="row-fluid" style="position:relative;height:100em;">
   <div id="parameters" class="parameter" style="top:0em;">
     Parameters:
     <a href="#" onClick="javascript:add_parameter();">Add Parameter</a>
+    <a href='{% url horizon:thermal:designer:parameter %}'  id="parameter__edit_parameter" class="btn btn-small ajax-modal btn-create">Add Parameter</a>
   </div> 
 </div>
 <script type="text/javascript">

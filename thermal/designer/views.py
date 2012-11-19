@@ -7,11 +7,14 @@ from django.http import HttpResponse
 from django.core.cache import cache
 
 from horizon import tabs
+from horizon import forms
 
 from thermal.models import HeatTemplate
 from thermal.api import heatclient
 
 from .tabs import DesignerTabs
+from .forms import EditParameterForm
+from .forms import EditResourceForm
 
 
 class IndexView(tabs.TabView):
@@ -66,3 +69,15 @@ class IndexView(tabs.TabView):
         print template
         cache.set('designer_template', template)
         return HttpResponse(json.dumps(template))
+
+
+class ParameterEditView(forms.ModalFormView):
+    form_class = EditParameterForm
+    template_name = 'thermal/designer/parameter.html'
+    #success_url = reverse_lazy('horizon:thermal:stacks:launch')
+
+
+class ResourceEditView(forms.ModalFormView):
+    form_class = EditResourceForm
+    template_name = 'thermal/designer/resource.html'
+    #success_url = reverse_lazy('horizon:thermal:stacks:launch')
