@@ -20,15 +20,19 @@ class EditParameterForm(forms.SelfHandlingForm):
     AllowedValues = forms.CharField(required=False)
 
     def handle(self, request, data):
-        return False
+        # nothing special to do here just
+        # return true to close the dialog
+        return True
 
 
 class EditResourceForm(forms.SelfHandlingForm):
     name = forms.SlugField()
-    description = forms.CharField()
+    description = forms.CharField(required=False)
 
     def handle(self, request, data):
-        return False
+        # nothing special to do here just
+        # return true to close the dialog
+        return True
 
 
 class UploadTemplate(forms.SelfHandlingForm):

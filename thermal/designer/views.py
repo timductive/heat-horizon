@@ -2,6 +2,7 @@ import json
 
 from xml.etree import ElementTree as et
 
+from django.core.urlresolvers import reverse_lazy
 from django.views.generic import TemplateView
 from django.http import HttpResponse
 from django.core.cache import cache
@@ -74,10 +75,44 @@ class IndexView(tabs.TabView):
 class ParameterEditView(forms.ModalFormView):
     form_class = EditParameterForm
     template_name = 'thermal/designer/parameter.html'
-    #success_url = reverse_lazy('horizon:thermal:stacks:launch')
+
+    def form_valid(self, form):
+        try:
+            handled = form.handle(self.request, form.cleaned_data)
+        except:
+            handled = None
+            exceptions.handle(self.request)
+
+        if handled:
+            form.cleaned_data['type'] = 'parameter'
+            data = json.dumps(form.cleaned_data)
+            wrapped = '<div id="modal_response">%s</div>' % data
+            response = HttpResponse(wrapped)
+            return response
+        else:
+            # If handled didn't return, we can assume something went
+            # wrong, and we should send back the form as-is.
+            return self.form_invalid(form)
 
 
 class ResourceEditView(forms.ModalFormView):
     form_class = EditResourceForm
     template_name = 'thermal/designer/resource.html'
-    #success_url = reverse_lazy('horizon:thermal:stacks:launch')
+
+    def form_valid(self, form):
+        try:
+            handled = form.handle(self.request, form.cleaned_data)
+        except:
+            handled = None
+            exceptions.handle(self.request)
+
+        if handled:
+            form.cleaned_data['type'] = 'resource'
+            data = json.dumps(form.cleaned_data)
+            wrapped = '<div id="modal_response">%s</div>' % data
+            response = HttpResponse(wrapped)
+            return response
+        else:
+            # If handled didn't return, we can assume something went
+            # wrong, and we should send back the form as-is.
+            return self.form_invalid(form)

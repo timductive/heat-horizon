@@ -3,13 +3,11 @@
     <input type="text" name="name">
     <label>Template Description</label>
     <input type="text" name="description">
-<a href="#" onClick="javascript:add_resource();">Add Resource</a>
-<a href='{% url horizon:thermal:designer:resource %}'  id="parameter__edit_parameter" class="btn btn-small ajax-modal btn-create">Add Resource</a>
+<a href='{% url horizon:thermal:designer:resource %}'  id="resource__edit_resource" class="btn btn-small ajax-modal btn-create">Add Resource</a>
+<a href='{% url horizon:thermal:designer:parameter %}'  id="parameter__edit_parameter" class="btn btn-small ajax-modal btn-create">Add Parameter</a>
 <div id="designer" class="row-fluid" style="position:relative;height:100em;">
   <div id="parameters" class="parameter" style="top:0em;">
     Parameters:
-    <a href="#" onClick="javascript:add_parameter();">Add Parameter</a>
-    <a href='{% url horizon:thermal:designer:parameter %}'  id="parameter__edit_parameter" class="btn btn-small ajax-modal btn-create">Add Parameter</a>
   </div> 
 </div>
 <script type="text/javascript">
@@ -61,24 +59,47 @@
          alert("Cannot drop connection " + info.connection.id + " : maxConnections has been reached on Endpoint " + info.endpoint.id);
       };
 
+  horizon.addInitFunction(function() {
+    $(document).on('hidden', '.modal', function (evt) {
+      modal_response = $("#modal_response");
+      if(modal_response.length){
+        // if we have a modal_response parse it
+        try {
+          json_data = $.parseJSON(modal_response.text());
+          if(json_data['type'] == 'parameter') {
+            add_parameter(json_data['name']);
+          } else if(json_data['type'] == 'resource') {
+            add_resource(json_data['name']);
+          } else { 
+            alert('Unhandled response type:' + json_data['type']);
+          };
+        } catch(err) { alert(err); };
+        // remove it after we're done
+        modal_response.remove();
+      };
+    });
+  });
+
   //jsPlumb.ready(function() {
   //});
 
-  function add_resource() {
-    var r = 'resource'.concat(r_ct++); 
-    var d = $('<div>'.concat(r).concat('</div>'));
-    d.attr('id', r);
+  function add_resource(name) {
+    //var r = 'resource'.concat(r_ct++); 
+    var d = $('<div>'.concat(name).concat('</div>'));
+    d.attr('id', name);
     d.attr('class', 'component window');
+    d.css('left', String(3*r_ct++).concat('em'));
+    d.css('top', String(3*r_ct++).concat('em'));
     d.appendTo('#designer');
-    var e1 = jsPlumb.addEndpoint(d, { anchor:anchors }, resourceEndpoint);
-    e1.bind("maxConnections", maxConnectionsCallback);
+    jsPlumb.addEndpoint(d, { anchor:anchors }, resourceEndpoint);
     jsPlumb.draggable(d, { containment:"parent" });
   };
 
-  function add_parameter() {
-    var p = 'parameter'.concat(p_ct++); 
-    var d = $('<div>'.concat(p).concat('</div>'));
-    d.attr('id', p);
+  function add_parameter(name) {
+    p_ct++;
+    //var p = 'parameter'.concat(p_ct++); 
+    var d = $('<div>'.concat(name).concat('</div>'));
+    d.attr('id', name);
     d.attr('class', 'parameter');
     d.css('top', String(3*p_ct).concat('em'));
     d.appendTo('#designer');
