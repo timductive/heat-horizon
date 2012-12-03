@@ -26,20 +26,31 @@ class LaunchCatalogue(tables.Action):
 
 
     def _get_template(self, template_name):
+        h = httplib2.Http(".cache",
+                          disable_ssl_certificate_validation=True)
+        url = '/'.join([CATALOGUES[cat_id]['base'], template_name])
+        return h.request(url, "GET")
+
+    def single(self, data_table, request, object_id):
+        self.request = request
+        cat_id = self.request.session.get('catalogue', None)
         # TODO: make cache dir configurable via django settings
         # TODO: make disabling ssl verification configurable too
         h = httplib2.Http(".cache",
                           disable_ssl_certificate_validation=True)
-        url = 'https://raw.github.com/heat-api/heat/master/templates/%s'
-        url = url % template_name
+        url = CATALOGUES[cat_id]['base']
+        if url[-1] == '/':
+            url = '%s%s' % (url, object_id)
+        else:
+            url = '%s/%s' % (url, object_id)
         resp, template = h.request(url, "GET")
         if resp.status not in (200, 304):
-            messages.error(self.request, 'URL returned status %s' % resp.status)
-        return template
-
-    def single(self, data_table, request, object_id):
-        self.request = request
-        template = self._get_template(object_id)
+            messages.error(self.request,
+                           '%s returned status %s' % (url, resp.status))
+            redirect_url = '%s?catalogue=%s' % (
+                                   reverse("horizon:thermal:catalogues:index"),
+                                   cat_id)
+            return HttpResponseRedirect(redirect_url)
         # store the template so we can render it next
         cache.set('heat_template_' + request.user.username, template)
         cache.set('heat_template_name_' + request.user.username, object_id)

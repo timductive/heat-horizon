@@ -27,7 +27,8 @@ class HeatTemplate(object):
         # Collect the fields
         fields = {'stack_name': forms.CharField(
                                    help_text='Unique name for the stack')}
-        for param, val in self.json['Parameters'].items():
+        parameters = self.json.get('Parameters', {})
+        for param, val in parameters.items():
             if 'AllowedValues' in val:
                 choices = map(lambda x: (x, x), val['AllowedValues'])
                 fields[param] = forms.ChoiceField(choices=choices)
@@ -48,23 +49,29 @@ class HeatTemplate(object):
         # This will have no effect if the params object is not
         # of type collections.OrderedDict
         # use object_pairs_hook=collections.OrderedDict on json.loads
-        form.base_fields.keyOrder = self.json['Parameters'].keys()
+        form.base_fields.keyOrder = parameters.keys()
         form.base_fields.keyOrder.insert(0, 'stack_name')
         ####form.base_fields.keyOrder.append('launch_ha')
         return form
 
+class ContentBase(object):
+    def __getattr__(self, key):
+        return self.content[key]
 
-class GitContent(object):
+
+class GitContent(ContentBase):
     def __init__(self, content):
         self.id = content['name']
         self.content = content
 
-    def __getattr__(self, key):
-        # got lazy, these should probably
-        return self.content[key]
 
-
-class AWSContent(object):#xml_models.Model):
-    object_xpath = './/Content'
-    #id = xml_models.CharField(xpath='/Content/Key')
-    #name = xml_models.CharField(xpath='/Content/Key')
+class AWSContent(ContentBase):
+    def __init__(self, content):
+        self.id = 'content key not found'
+        self.content = {}
+        for c in content.getchildren():
+            key = c.tag.split('}')[1]
+            if key == 'Key':
+                key = 'name'
+                self.id = c.text
+            self.content[key.lower()] = c.text

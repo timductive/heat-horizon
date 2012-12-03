@@ -46,6 +46,9 @@ class LaunchHeatView(generic.FormView):
     def get(self, request, *args, **kw):
         template = cache.get('heat_template_' + request.user.username)
         template_name = cache.get('heat_template_name_' + request.user.username)
+        if template is None:
+            return HttpResponseRedirect(request.META['HTTP_REFERER'])
+            #return HttpResponseRedirect(reverse('horizon:thermal:stacks:upload'))
         t = HeatTemplate(template, self.form_class)
         context = {'form': t.form(),
                    'template_name': template_name}
@@ -55,7 +58,8 @@ class LaunchHeatView(generic.FormView):
         template = cache.get('heat_template_' + request.user.username)
         template_name = cache.get('heat_template_name_' + request.user.username)
         if template is None:
-            return HttpResponseRedirect('horizon:thermal:stacks:upload')
+            return HttpResponseRedirect(request.META['HTTP_REFERER'])
+            #return HttpResponseRedirect(reverse('horizon:thermal:stacks:upload'))
         t = HeatTemplate(template, self.form_class)
         form = t.form(request.POST)
         client = heatclient(request)
