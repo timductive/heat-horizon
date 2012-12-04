@@ -28,17 +28,6 @@ class IndexView(tabs.TabView):
 
     def get_data(self, request, **kwargs):
         return ''
-    #    if not hasattr(self, "_stack"):
-    #        print kwargs
-    #        stack_id = kwargs['stack_id']
-    #        try:
-    #            stack = heatclient(request).stacks.get(stack_id)
-    #            self._stack = stack
-    #        except Exception, e:
-    #            messages.error(request, e)
-    #            redirect = reverse('horizon:thermal:stacks:index')
-    #            return HttpResponseRedirect(redirect)
-    #    return self._stack
 
     def get_tabs(self, request, **kwargs):
         stack = self.get_data(request, **kwargs)
@@ -46,23 +35,34 @@ class IndexView(tabs.TabView):
 
     def post(self, request):
         resources = {}
+        parameters = {}
         template_html = '<template>%s</template>' % \
                                 request.POST.get('template', '')
-        print template_html
-        print request.POST
         root = et.fromstring(template_html) 
         for child in root:
-            if 'id' in child.attrib:
-                resources[child.attrib['id']] = { 
-                    'Type': "AWS::EC2::Instance",
-                    #'Metadata':,
-                    #'Properties':,
-                }
+            if 'id' in child.attrib and 'class' in child.attrib:
+                if 'resource' in child.attrib['class']:
+                    resources[child.attrib['id']] = { 
+                        'Type': "AWS::EC2::Instance",
+                        #'Metadata':,
+                        #'Properties':,
+                    }
+                elif 'parameter' in child.attrib['class'] \
+                        and child.attrib['id'] != 'parameters':
+                    parameters[child.attrib['id']] = {  
+                        #"Default": "wordpress",
+                        #"Description" : "The WordPress database name",
+                        #"Type": "String",
+                        #"MinLength": "1",
+                        #"MaxLength": "64",
+                        #"AllowedPattern" : "[a-zA-Z][a-zA-Z0-9]*",
+                        #"ConstraintDescription" : "must begin with a letter and contain only alphanumeric characters."
+                    }
 
         template = {
             "AWSTemplateFormatVersion" : "2010-09-09",
             "Description" : request.POST.get('description', ''),
-            #"Parameters": {},
+            "Parameters": parameters,
             "Resources": resources,
             #"Output": {},
         }

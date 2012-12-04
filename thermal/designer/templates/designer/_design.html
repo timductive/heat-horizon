@@ -21,6 +21,7 @@
         activeClass:'dragActive'
       };
   var connectorStyle = {
+        //connector: "StateMachine",
         gradient:{stops:[[0, exampleColor], [0.5, "#09098e"], [1, exampleColor]]},
         lineWidth:3,
         strokeStyle:exampleColor,
@@ -67,7 +68,7 @@
         try {
           json_data = $.parseJSON(modal_response.text());
           if(json_data['type'] == 'parameter') {
-            add_parameter(json_data['name']);
+            add_parameter(json_data['name'], json_data['Default']);
           } else if(json_data['type'] == 'resource') {
             add_resource(json_data['name']);
           } else { 
@@ -80,14 +81,17 @@
     });
   });
 
-  //jsPlumb.ready(function() {
-  //});
+  jsPlumb.ready(function() {
+    jsPlumb.bind("click", function(c) { 
+       jsPlumb.detach(c); 
+    });
+  });
 
   function add_resource(name) {
     //var r = 'resource'.concat(r_ct++); 
     var d = $('<div>'.concat(name).concat('</div>'));
     d.attr('id', name);
-    d.attr('class', 'component window');
+    d.attr('class', 'resource window');
     d.css('left', String(3*r_ct++).concat('em'));
     d.css('top', String(3*r_ct++).concat('em'));
     d.appendTo('#designer');
@@ -95,10 +99,17 @@
     jsPlumb.draggable(d, { containment:"parent" });
   };
 
-  function add_parameter(name) {
+  function add_parameter(name, def) {
     p_ct++;
     //var p = 'parameter'.concat(p_ct++); 
-    var d = $('<div>'.concat(name).concat('</div>'));
+    var d_str = '<div>'.concat(name);
+        d_str = d_str.concat('<p>');
+        d_str = d_str.concat('<default>');
+        d_str = d_str.concat(def);
+        d_str = d_str.concat('</default>');
+        d_str = d_str.concat('</p>');
+        d_str = d_str.concat('</div>');
+    var d = $(d_str);
     d.attr('id', name);
     d.attr('class', 'parameter');
     d.css('top', String(3*p_ct).concat('em'));

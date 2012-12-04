@@ -23,8 +23,10 @@ class RenderTab(tabs.Tab):
     preload = False
 
     def get_context_data(self, request):
-        template = cache.get('designer_template', '')
-        return {"template": template, }
+        template = cache.get('designer_template', '{}')
+        #data = json.loads(template)
+        data = json.dumps(template, indent=4)
+        return {"template": data, }
 
 
 class DesignerTabs(tabs.TabGroup):

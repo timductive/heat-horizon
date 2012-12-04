@@ -1,5 +1,5 @@
 /* Additional CSS for thermal. */
-.component {
+.resource {
     opacity:0.8; 
     filter:alpha(opacity=80);
     background-color:white;
@@ -36,6 +36,7 @@
     padding:8px;
     padding:8px;
 }
+
 .label:hover {
 border-color:#5d94a6;   
 }
@@ -47,13 +48,6 @@ border-color:#5d94a6;
 #parameters {top:2em;right:2em;}
 .dropHover { border:1px dotted red; }
 .dragActive { border:2px dotted orange; }
-#container1 { top:2em; left:47em;}
-#window3 { top:28em;left:2em; }
-#window4 { top:6em; left:26em;}
-#window5 {top:40em;left:32em;}
-#window6 {top:25em;left:69em;}
-#window7 {top:54em;left:4em;}
-#window8 {left:63em;top:32em;}
 ._jsPlumb_connector { z-index:4; }
 ._jsPlumb_endpoint { z-index:5; }
 ._jsPlumb_overlay { z-index:6; }
