@@ -31,8 +31,9 @@ class IndexView(tables.DataTableView):
 
     def get_data(self, **kwargs):
         templates = []
-        if 'catalogue' in self.request.GET:
-            cat_id = self.request.GET['catalogue']
+        cat_id = self.request.GET.get('catalogue', None) or \
+                 self.request.session.get('catalogue', None)
+        if cat_id:
             self.request.session['catalogue'] = cat_id
             # TODO: make cache dir configurable via django settings
             # TODO: make disabling ssl verification configurable too
@@ -58,5 +59,7 @@ class IndexView(tables.DataTableView):
         context = super(IndexView, self).get_context_data(**kwargs)
         if 'catalogue' in self.request.GET:
             context['catalogue'] = self.request.GET['catalogue']
+        elif 'catalogue' in self.request.session:
+            context['catalogue'] = self.request.session['catalogue']
         context['form'] = CataloguesForm(context)
         return context
