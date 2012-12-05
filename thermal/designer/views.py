@@ -36,17 +36,20 @@ class IndexView(tabs.TabView):
     def post(self, request):
         resources = {}
         parameters = {}
+        connections = []
         template_html = '<template>%s</template>' % \
                                 request.POST.get('template', '')
         root = et.fromstring(template_html) 
         for child in root:
             if 'id' in child.attrib and 'class' in child.attrib:
+                ### Gather the resources
                 if 'resource' in child.attrib['class']:
                     resources[child.attrib['id']] = { 
                         'Type': "AWS::EC2::Instance",
                         #'Metadata':,
-                        #'Properties':,
+                        'Properties': {},
                     }
+                ### Gather the parameters
                 elif 'parameter' in child.attrib['class'] \
                         and child.attrib['id'] != 'parameters':
                     parameters[child.attrib['id']] = {  
@@ -58,6 +61,16 @@ class IndexView(tabs.TabView):
                         #"AllowedPattern" : "[a-zA-Z][a-zA-Z0-9]*",
                         #"ConstraintDescription" : "must begin with a letter and contain only alphanumeric characters."
                     }
+            elif 'id' in child.attrib and child.attrib['id'] == 'connections':
+                ### Gather connections
+                for conn in child.getchildren():
+                    children = conn.getchildren()
+                    connections.append((children[0].text,
+                                        children[1].text))
+
+        ### add references for the connections
+        for sourceid, targetid in connections:
+            resources[sourceid]['Properties'][targetid] = {"Ref": targetid}
 
         template = {
             "AWSTemplateFormatVersion" : "2010-09-09",

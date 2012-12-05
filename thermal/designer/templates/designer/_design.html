@@ -9,6 +9,7 @@
   <div id="parameters" class="parameter" style="top:0em;">
     Parameters:
   </div> 
+  <div id="connections" style="display:none;"></div>
 </div>
 <script type="text/javascript">
   var r_ct = 0;
@@ -133,4 +134,32 @@
     jsPlumb.connect({ source:"container0", target:"container1" });
   };
 
+  var connections = [];
+  var updateConnections = function(conn, remove) {
+      if (!remove) connections.push(conn);
+      else {
+          var idx = -1;
+          for (var i = 0; i < connections.length; i++) {
+              if (connections[i] == conn) {
+                  idx = i; break;
+              }
+          }
+          if (idx != -1) connections.splice(idx, 1);
+      }
+      if (connections.length > 0) {
+          $("#connections").empty();
+          for (var j = 0; j < connections.length; j++) {
+              var s = $("<connection><sourceId>" + connections[j].sourceId + "</sourceId><targetId>" + connections[j].targetId + "</targetId></connection>");
+              $("#connections").append(s);
+          }
+      } else 
+          $("#connections").empty();
+  };              
+  
+  jsPlumb.bind("connection", function(info, originalEvent) {
+      updateConnections(info.connection);
+  });
+  jsPlumb.bind("connectionDetached", function(info, originalEvent) {
+      updateConnections(info.connection, true);
+  });
 </script>
