@@ -79,19 +79,16 @@ class ThermalStacksTable(tables.DataTable):
         row_actions = (DeleteStack, )
 
 
-def thermal_events_table_instance_name(datum):
-    return '%s.%s' % (datum.stackname, datum.logicalresourceid) 
-
 def thermal_events_table_instance_link(datum):
-    if datum.physicalresourceid is None or \
-       datum.physicalresourceid == 'None':
+    if datum.physical_resource_id is None or \
+       datum.physical_resource_id == 'None':
         # All the Physical Resource ID's are sometimes 'None'
         # return None when this is the case to indicate not
         # to link the instance name
         return None
     # Otherwise link the project instance details
     url = reverse('horizon:project:instances:detail',
-                  args=(datum.physicalresourceid,))
+                  args=(datum.physical_resource_id,))
     return url
 
 class ThermalEventsTable(tables.DataTable):
@@ -99,16 +96,15 @@ class ThermalEventsTable(tables.DataTable):
         ("Create Complete", True),
         ("Create Failed", False),
     )
-    timestamp = tables.Column("timestamp", verbose_name=_("Timestamp"))
-    stackname = tables.Column("stackname", verbose_name=_("stackname"))
-    logical_resource = tables.Column(thermal_events_table_instance_name,
+    event_time = tables.Column("event_time", verbose_name=_("Event Time"))
+    logical_resource = tables.Column("logical_resource_id",
                                      verbose_name=_("Logical Resource"),
                                      link=thermal_events_table_instance_link,)
-    status = tables.Column("resourcestatus",
+    status = tables.Column("resource_status",
                            filters=(title, replace_underscores),
                            verbose_name=_("Status"),)
 
-    statusreason = tables.Column("resourcestatusreason",
+    status_reason = tables.Column("resource_status_reason",
                                  verbose_name=_("Status Reason"),)
 
     class Meta:

@@ -4,6 +4,8 @@ from horizon import messages
 from horizon import exceptions
 from horizon import tabs
 
+from thermal.api import heatclient
+
 from .tables import ThermalEventsTable
 
 
@@ -25,10 +27,12 @@ class EventsTab(tabs.Tab):
     def get_context_data(self, request):
         stack = self.tab_group.kwargs['stack']
         try:
-            events = Event.objects.filter(request, StackName=stack.stack_name)
-        except:
+            events = heatclient(request).events.list(stack.stack_name)
+        except Exception, e:
             events = []
-            messages.error(request,_('Unable to get events for stack "%s".') % stack.stack_name)
+            messages.error(request,
+                           _('Unable to get events for stack "%s": %s') % \
+                            (stack.stack_name, e))
             #exceptions.handle(request, ignore=True)
         return {"stack": stack,
                 "table": ThermalEventsTable(request, data=events), }
