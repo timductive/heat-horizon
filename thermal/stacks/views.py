@@ -14,7 +14,7 @@ from django.core.cache import cache
 from django.views import generic
 
 from thermal.models import HeatTemplate
-from thermal.api import heatclient
+from thermal import api
 
 from .tables import ThermalStacksTable
 from .forms import UploadTemplate
@@ -34,7 +34,7 @@ class IndexView(tables.DataTableView):
         return stack
 
     def get_data(self):
-        stacks = heatclient(self.request).stacks.list()
+        stacks = api.heat.stacks_list(self.request)
         stacks = map(self._inject_name, stacks)
         return stacks
 
@@ -47,8 +47,10 @@ class LaunchHeatView(generic.FormView):
         template = cache.get('heat_template_' + request.user.username)
         template_name = cache.get('heat_template_name_' + request.user.username)
         if template is None:
-            return HttpResponseRedirect(request.META['HTTP_REFERER'])
-            #return HttpResponseRedirect(reverse('horizon:thermal:stacks:upload'))
+            if 'HTTP_REFERER' in request.META:
+                return HttpResponseRedirect(request.META['HTTP_REFERER'])
+            else:
+                return HttpResponseRedirect(reverse('horizon:thermal:stacks:upload'))
         t = HeatTemplate(template, self.form_class)
         context = {'form': t.form(),
                    'template_name': template_name}
@@ -58,21 +60,25 @@ class LaunchHeatView(generic.FormView):
         template = cache.get('heat_template_' + request.user.username)
         template_name = cache.get('heat_template_name_' + request.user.username)
         if template is None:
-            return HttpResponseRedirect(request.META['HTTP_REFERER'])
-            #return HttpResponseRedirect(reverse('horizon:thermal:stacks:upload'))
+            if 'HTTP_REFERER' in request.META:
+                return HttpResponseRedirect(request.META['HTTP_REFERER'])
+            else:
+                return HttpResponseRedirect(reverse('horizon:thermal:stacks:upload'))
         t = HeatTemplate(template, self.form_class)
         form = t.form(request.POST)
-        client = heatclient(request)
         if form.is_valid():
             try:
                 stack_name = form.cleaned_data.pop('stack_name')
                 params = {'stack_name': stack_name,
                           'template': t.json,
                           'parameters': form.cleaned_data,}
-                result = client.stacks.create(**params)
+                result = api.heat.stacks_create(request, params)
             except Exception, e:
                 messages.error(request, e)
                 return self.render_to_response({'form': form,
+                                                'template_name': template_name})
+        else:
+            return self.render_to_response({'form': form,
                                                 'template_name': template_name})
         return HttpResponseRedirect(self.success_url)
 
@@ -96,7 +102,7 @@ class DetailView(tabs.TabView):
         if not hasattr(self, "_stack"):
             stack_id = kwargs['stack_id']
             try:
-                stack = heatclient(request).stacks.get(stack_id)
+                stack = api.heat.stacks_get(request, stack_id)
                 self._stack = stack
             except Exception, e:
                 messages.error(request, e)

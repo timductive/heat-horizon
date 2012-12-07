@@ -38,3 +38,18 @@ def heatclient(request):
     client = heat_client.Client(api_version, endpoint, **kwargs)
     client.format_parameters = format_parameters
     return client
+
+def stacks_list(request):
+    return heatclient(request).stacks.list()
+
+def stacks_create(request, params):
+    return heatclient(request).stacks.create(**params)
+
+def stacks_get(request, stack_id):
+    return heatclient(request).stacks.get(stack_id)
+
+def stacks_delete(request, stack_id):
+    return heatclient(request).stacks.delete(stack_id)
+
+def events_list(request, stack_name):
+    return heatclient(request).events.list(stack_name)

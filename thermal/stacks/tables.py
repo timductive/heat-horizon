@@ -13,7 +13,7 @@ from horizon import messages
 
 from heatclient import exc
 
-from thermal.api import heatclient
+from thermal import api
 
 LOG = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ class DeleteStack(tables.BatchAction):
             return True
 
     def action(self, request, stack_id):
-        heatclient(request).stacks.delete(stack_id)
+        api.heat.stacks_delete(request, stack_id)
 
 
 class StacksUpdateRow(tables.Row):
@@ -46,7 +46,7 @@ class StacksUpdateRow(tables.Row):
 
     def get_data(self, request, stack_id):
         try:
-            return heatclient(request).stacks.get(stack_id)
+            return api.heat.stacks_get(request, stack_id)
         except exc.HTTPNotFound:
             # returning 404 to the ajax call removes the
             # row from the table on the ui

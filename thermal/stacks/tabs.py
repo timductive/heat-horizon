@@ -4,7 +4,7 @@ from horizon import messages
 from horizon import exceptions
 from horizon import tabs
 
-from thermal.api import heatclient
+from thermal import api
 
 from .tables import ThermalEventsTable
 
@@ -27,7 +27,7 @@ class EventsTab(tabs.Tab):
     def get_context_data(self, request):
         stack = self.tab_group.kwargs['stack']
         try:
-            events = heatclient(request).events.list(stack.stack_name)
+            events = api.heat.events_list(request, stack.stack_name)
         except Exception, e:
             events = []
             messages.error(request,

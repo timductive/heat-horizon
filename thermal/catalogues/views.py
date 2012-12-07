@@ -19,7 +19,6 @@ from thermal import CATALOGUES
 from thermal.models import HeatTemplate
 from thermal.models import GitContent
 from thermal.models import AWSContent
-from thermal.api import heatclient
 
 from .tables import ThermalCataloguesTable
 from .forms import CataloguesForm
