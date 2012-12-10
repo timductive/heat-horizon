@@ -10,14 +10,12 @@ class HeatTemplate(object):
     json = None
     form = None
 
-    def __init__(self, template, passback=None):
+    def __init__(self, template):
         # get uploaded form from the cache
         self.template = template
         self.json = json.loads(template,
                                object_pairs_hook=collections.OrderedDict)
         self.form = self.generate_heat_form()
-        if passback:
-            passback = self.form
 
     def generate_heat_form(self):
         '''
