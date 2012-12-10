@@ -51,7 +51,7 @@ class LaunchHeatView(generic.FormView):
                 return HttpResponseRedirect(request.META['HTTP_REFERER'])
             else:
                 return HttpResponseRedirect(reverse('horizon:thermal:stacks:upload'))
-        t = HeatTemplate(template, self.form_class)
+        t = HeatTemplate(template)
         context = {'form': t.form(),
                    'template_name': template_name}
         return self.render_to_response(context)
@@ -64,7 +64,7 @@ class LaunchHeatView(generic.FormView):
                 return HttpResponseRedirect(request.META['HTTP_REFERER'])
             else:
                 return HttpResponseRedirect(reverse('horizon:thermal:stacks:upload'))
-        t = HeatTemplate(template, self.form_class)
+        t = HeatTemplate(template)
         form = t.form(request.POST)
         if form.is_valid():
             try:
