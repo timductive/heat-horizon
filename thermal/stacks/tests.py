@@ -14,6 +14,7 @@
 
 import uuid
 import httplib2
+import tempfile
 
 from collections import OrderedDict
 
@@ -25,11 +26,13 @@ from django.utils.datastructures import SortedDict
 
 from mox import IsA
 
-from thermal import api as t_api
 from openstack_dashboard import api
 from openstack_dashboard.test import helpers as test
 from openstack_dashboard.test.test_data.utils import TestDataContainer
 
+from heatclient import exc
+
+from thermal import api as t_api
 
 INDEX_URL = reverse('horizon:thermal:stacks:index')
 LAUNCH_URL = reverse('horizon:thermal:stacks:launch')
@@ -40,6 +43,13 @@ class Stack(object):
     def __init__(self, stack_name):
         self.id = uuid.uuid4().get_hex()
         self.stack_name = stack_name
+
+
+class Event(object):
+    def __init__(self, physical_resource_id=None):
+        self.id = uuid.uuid4().get_hex()
+        self.physical_resource_id = physical_resource_id
+
 
 class StackViewTest(test.BaseAdminViewTests):
     @test.create_stubs({t_api.heat: ('stacks_list',)})
@@ -55,20 +65,22 @@ class StackViewTest(test.BaseAdminViewTests):
         self.assertItemsEqual(stacks_table, stacks.list())
 
     def test_upload_file(self):
-        #####
-        # This test works if you open a file, but not if you construct a
-        # temproary file, need to fix this
-        #####
-        import tempfile
-        f = tempfile.NamedTemporaryFile()
-        f.write('{}')
-        f.flush()
-        #f = open('/etc/passwd', 'r')
-        self.mox.ReplayAll()
+        # create a tempfile
+        t = tempfile.NamedTemporaryFile()
+        # write some empty json content so parsing succeeds
+        t.write('{}')
+        t.flush()
+        # now open the temp file as a proper file object
+        # the tempfile isn't complete enough for django to
+        # recognize it as an uploaded file object
+        f = open(t.name, 'r')
 
         # https://docs.djangoproject.com/en/dev/topics/testing/
         res = self.client.post(UPLOAD_URL, {'name': 'test', 'upload_template': f})
         self.assertRedirectsNoFollow(res, LAUNCH_URL)
+        # cleanup our file handlers
+        f.close()
+        t.close()
 
     @test.create_stubs({httplib2.Http: ('request',)})
     def test_upload_url(self):
@@ -96,8 +108,24 @@ class StackViewTest(test.BaseAdminViewTests):
 
     @test.create_stubs({cache: ('get',)})
     def test_launch(self):
-        cache.get('heat_template_test_user').AndReturn('{}')
-        cache.get('heat_template_name_test_user').AndReturn('{}')
+        t_json = '''{
+  "Parameters" : {
+
+    "KeyName" : {
+      "Description" : "Name of an existing EC2 KeyPair to enable SSH access to the instances",
+      "Type" : "String"
+    },
+
+    "LinuxDistribution": {
+      "Default": "F17",
+      "Description" : "Distribution of choice",
+      "Type": "String",
+      "AllowedValues" : [ "F16", "F17", "U10", "RHEL-6.1", "RHEL-6.2", "RHEL-6.3" ]
+    }
+  }
+}'''
+        cache.get('heat_template_test_user').AndReturn(t_json)
+        cache.get('heat_template_name_test_user').AndReturn('test_template')
         
         self.mox.ReplayAll()
 
@@ -121,14 +149,12 @@ class StackViewTest(test.BaseAdminViewTests):
     @test.create_stubs({cache: ('get',)})
     def test_launch_post_invalid_form(self):
         cache.get('heat_template_test_user').AndReturn('{}')
-        cache.get('heat_template_name_test_user').AndReturn('{}')
+        cache.get('heat_template_name_test_user').AndReturn('invalid_form')
         
         self.mox.ReplayAll()
 
         res = self.client.post(LAUNCH_URL)
         self.assertTemplateUsed(res, 'thermal/stacks/launch.html')
-        #instances = res.context['table'].data
-        #self.assertItemsEqual(instances, servers)
 
     @test.create_stubs({cache: ('get',)})
     def test_launch_post_no_template(self):
@@ -172,30 +198,65 @@ class StackViewTest(test.BaseAdminViewTests):
         res = self.client.post(LAUNCH_URL, {'stack_name': 'test_launch'})
         self.assertTemplateUsed(res, 'thermal/stacks/launch.html')
 
-    ####
-    # These two have errors that need to be figured out.
-    # the code gets covered but the template redering fails
-    ####
+    @test.create_stubs({t_api.heat: ('stacks_get',)})
+    def test_detail(self):
+        stack = Stack('test')
+        t_api.heat.stacks_get(IsA(http.HttpRequest), stack.stack_name).AndReturn(stack)
+        self.mox.ReplayAll()
 
-    #@test.create_stubs({t_api.heat: ('stacks_get',)})
-    #def test_detail(self):
-    #    stack = Stack('test')
-    #    t_api.heat.stacks_get(IsA(http.HttpRequest), stack.stack_name).AndReturn(Stack)
-    #    self.mox.ReplayAll()
+        res = self.client.get(reverse('horizon:thermal:stacks:detail', args=('test',)))
+        self.assertTemplateUsed(res, 'thermal/stacks/detail.html')
+        self.assertTemplateUsed(res, 'thermal/stacks/_detail_overview.html')
 
-    #    res = self.client.get(reverse('horizon:thermal:stacks:detail', args=('test',)))
-    #    self.assertTemplateUsed(res, 'thermal/stacks/detail.html')
+    @test.create_stubs({t_api.heat: ('stacks_get',)})
+    def test_detail_w_execption(self):
+        stack = Stack('test')
+        t_api.heat.stacks_get(IsA(http.HttpRequest), stack.stack_name).AndRaise(Exception)
+        self.mox.ReplayAll()
 
-    #@test.create_stubs({t_api.heat: ('stacks_get',)})
-    #def test_detail_invalid_stack(self):
-    #    stack = Stack('test')
-    #    t_api.heat.stacks_get(IsA(http.HttpRequest), stack.stack_name).AndRaise(Exception)
-    #    self.mox.ReplayAll()
+        url = reverse('horizon:thermal:stacks:detail', args=('test',))
+        res = self.client.get(url)
+        self.assertRedirectsNoFollow(res, INDEX_URL)
 
-    #    url = reverse('horizon:thermal:stacks:detail', args=('test',))
-    #    print url
-    #    res = self.client.get(url)
-    #    self.assertRedirectsNoFollow(res, INDEX_URL)
+    @test.create_stubs({t_api.heat: ('stacks_get', 'events_list')})
+    def test_events_empty(self):
+        stack = Stack('test')
+        t_api.heat.stacks_get(IsA(http.HttpRequest), stack.stack_name).AndReturn(stack)
+        t_api.heat.events_list(IsA(http.HttpRequest), stack.stack_name).AndReturn([])
+        self.mox.ReplayAll()
+
+        url = '%s?tab=stack_details__events' % \
+                reverse('horizon:thermal:stacks:detail', args=('test',))
+        res = self.client.get(url)
+        self.assertTemplateUsed(res, 'thermal/stacks/detail.html')
+        self.assertTemplateUsed(res, 'thermal/stacks/_detail_events.html')
+
+    @test.create_stubs({t_api.heat: ('stacks_get', 'events_list')})
+    def test_events_non_empty(self):
+        stack = Stack('test')
+        events = [Event(), Event('test_event')]
+        t_api.heat.stacks_get(IsA(http.HttpRequest), stack.stack_name).AndReturn(stack)
+        t_api.heat.events_list(IsA(http.HttpRequest), stack.stack_name).AndReturn(events)
+        self.mox.ReplayAll()
+
+        url = '%s?tab=stack_details__events' % \
+                reverse('horizon:thermal:stacks:detail', args=('test',))
+        res = self.client.get(url)
+        self.assertTemplateUsed(res, 'thermal/stacks/detail.html')
+        self.assertTemplateUsed(res, 'thermal/stacks/_detail_events.html')
+
+    @test.create_stubs({t_api.heat: ('stacks_get', 'events_list')})
+    def test_events_w_exception(self):
+        stack = Stack('test')
+        t_api.heat.stacks_get(IsA(http.HttpRequest), stack.stack_name).AndReturn(stack)
+        #t_api.heat.events_list(IsA(http.HttpRequest), stack.stack_name).AndRaise(Exception)
+        self.mox.ReplayAll()
+
+        url = '%s?tab=stack_details__events' % \
+                reverse('horizon:thermal:stacks:detail', args=('test',))
+        res = self.client.get(url)
+        self.assertTemplateUsed(res, 'thermal/stacks/detail.html')
+        self.assertTemplateUsed(res, 'thermal/stacks/_detail_events.html')
 
     @test.create_stubs({t_api.heat: ('stacks_list', 'stacks_delete')})
     def test_delete_stack(self):
@@ -211,7 +272,7 @@ class StackViewTest(test.BaseAdminViewTests):
         self.assertRedirectsNoFollow(res, INDEX_URL)
 
     @test.create_stubs({t_api.heat: ('stacks_get',)})
-    def test_ajax_loading_instances(self):
+    def test_ajax_loading_stack(self):
         stack = Stack('update_me')
         t_api.heat.stacks_get(IsA(http.HttpRequest), stack.id).AndReturn(stack)
         self.mox.ReplayAll()
@@ -223,3 +284,27 @@ class StackViewTest(test.BaseAdminViewTests):
         self.assertTemplateUsed(res, "horizon/common/_data_table_row.html")
 
         self.assertContains(res, "update_me", 1, 200)
+
+    @test.create_stubs({t_api.heat: ('stacks_get',)})
+    def test_ajax_loading_stack_404(self):
+        stack = Stack('update_me')
+        t_api.heat.stacks_get(IsA(http.HttpRequest), stack.id).AndRaise(exc.HTTPNotFound)
+        self.mox.ReplayAll()
+
+        url = INDEX_URL + "?action=row_update&table=stacks&obj_id=" + stack.id
+
+        res = self.client.get(url, {},
+                              HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertTemplateUsed(res, "404.html")
+
+    @test.create_stubs({t_api.heat: ('stacks_get',)})
+    def test_ajax_loading_stack_w_exception(self):
+        stack = Stack('update_me')
+        t_api.heat.stacks_get(IsA(http.HttpRequest), stack.id).AndRaise(Exception)
+        self.mox.ReplayAll()
+
+        url = INDEX_URL + "?action=row_update&table=stacks&obj_id=" + stack.id
+
+        res = self.client.get(url, {},
+                              HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertTemplateUsed(res, "404.html")
