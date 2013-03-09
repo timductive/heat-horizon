@@ -4,8 +4,6 @@ import httplib2
 from horizon import messages
 from horizon import forms
 
-from django.core.cache import cache
-
 
 class UploadTemplate(forms.SelfHandlingForm):
     upload_template = forms.FileField(required=False)
@@ -34,7 +32,7 @@ class UploadTemplate(forms.SelfHandlingForm):
             return False
 
         # store the template so we can render it next
-        cache.set('heat_template_' + request.user.username, template)
-        cache.set('heat_template_name_' + request.user.username, template_name)
+        request.session['heat_template'] = template
+        request.session['heat_template_name'] = template_name
         # No template validation is done here, We'll let heat do that for us
         return True
