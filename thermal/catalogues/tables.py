@@ -1,5 +1,4 @@
 import httplib2
-import logging
 
 from django.core import urlresolvers
 from django.core.cache import cache
@@ -15,8 +14,6 @@ from horizon import messages
 from horizon.utils.filters import replace_underscores
 
 from thermal import CATALOGUES
-
-LOG = logging.getLogger(__name__)
 
 
 class LaunchCatalogue(tables.Action):
@@ -52,8 +49,8 @@ class LaunchCatalogue(tables.Action):
                                    cat_id)
             return HttpResponseRedirect(redirect_url)
         # store the template so we can render it next
-        cache.set('heat_template_' + request.user.username, template)
-        cache.set('heat_template_name_' + request.user.username, object_id)
+        request.session['heat_template'] = template
+        request.session['heat_template_name'] = object_id
         return HttpResponseRedirect(reverse("horizon:thermal:stacks:launch"))
 
 

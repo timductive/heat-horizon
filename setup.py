@@ -22,11 +22,10 @@ import setuptools
 from heat.openstack.common import setup
 
 from heat import version
-version.write_git_sha()
 
 setuptools.setup(
     name='thermal',
-    version=version.HEAT_VERSION,
+    version=version.version_info.version_string(),
     description='A Horizon plugin providing a web user interface '
                 'for The heat project virtual machines',
     license='Apache License (2.0)',

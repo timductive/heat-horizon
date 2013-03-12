@@ -44,8 +44,9 @@ class LaunchHeatView(generic.FormView):
     success_url = reverse_lazy('horizon:thermal:stacks:index')
 
     def get(self, request, *args, **kw):
-        template = cache.get('heat_template_' + request.user.username)
-        template_name = cache.get('heat_template_name_' + request.user.username)
+        template = request.session.get('heat_template', None)
+        template_name = request.session.get('heat_template_name', None)
+
         if template is None:
             if 'HTTP_REFERER' in request.META:
                 return HttpResponseRedirect(request.META['HTTP_REFERER'])
@@ -57,8 +58,8 @@ class LaunchHeatView(generic.FormView):
         return self.render_to_response(context)
 
     def post(self, request, *args, **kw):
-        template = cache.get('heat_template_' + request.user.username)
-        template_name = cache.get('heat_template_name_' + request.user.username)
+        template = request.session.get('heat_template', None)
+        template_name = request.session.get('heat_template_name', None)
         if template is None:
             if 'HTTP_REFERER' in request.META:
                 return HttpResponseRedirect(request.META['HTTP_REFERER'])
@@ -95,7 +96,7 @@ class DetailView(tabs.TabView):
 
     def get_context_data(self, **kwargs):
         context = super(DetailView, self).get_context_data(**kwargs)
-        context["stack"] = self.get_data(self.request)
+        context["stack"] = self.get_data(self.request, **kwargs)
         return context
 
     def get_data(self, request, **kwargs):
