@@ -2,7 +2,7 @@
 {% load i18n %}
 
 {% block form_id %}upload_template_form{% endblock %}
-{% block form_action %}{% url horizon:thermal:stacks:upload %}{% endblock %}
+{% block form_action %}{% url "horizon:thermal:stacks:upload" %}{% endblock %}
 {% block form_attrs %}enctype="multipart/form-data"{% endblock %}
 
 {% block modal_id %}upload_template_modal{% endblock %}
@@ -22,5 +22,5 @@
 
 {% block modal-footer %}
   <input class="btn btn-primary pull-right" type="submit" value="{% trans "Next" %}" />
-  <a href="{% url horizon:thermal:stacks:index %}" class="btn secondary cancel close">{% trans "Cancel" %}</a>
+  <a href="{% url "horizon:thermal:stacks:index" %}" class="btn secondary cancel close">{% trans "Cancel" %}</a>
 {% endblock %}
